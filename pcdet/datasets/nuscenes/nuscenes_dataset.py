@@ -26,7 +26,7 @@ class NuScenesDataset(DatasetTemplate):
         nuscenes_infos = []
 
         for info_path in self.dataset_cfg.INFO_PATH[mode]:
-            info_path = self.root_path / info_path
+            info_path =  Path('/home/kpeng/pc14/OpenPCDet/data/nuscenes/v1.0-trainval')/ info_path
             if not info_path.exists():
                 continue
             with open(info_path, 'rb') as f:
@@ -79,6 +79,7 @@ class NuScenesDataset(DatasetTemplate):
             return points[mask]
 
         lidar_path = self.root_path / sweep_info['lidar_path']
+        #print(lidar_path)
         points_sweep = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 5])[:, :4]
         points_sweep = remove_ego_points(points_sweep).T
         if sweep_info['transform_matrix'] is not None:
@@ -93,6 +94,7 @@ class NuScenesDataset(DatasetTemplate):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
         points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 5])[:, :4]
+        
 
         sweep_points_list = [points]
         sweep_times_list = [np.zeros((points.shape[0], 1))]
@@ -254,12 +256,13 @@ class NuScenesDataset(DatasetTemplate):
     def create_groundtruth_database(self, used_classes=None, max_sweeps=10):
         import torch
 
-        database_save_path = self.root_path / f'gt_database_{max_sweeps}sweeps_withvelo'
-        db_info_save_path = self.root_path / f'nuscenes_dbinfos_{max_sweeps}sweeps_withvelo.pkl'
+        database_save_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s/v1.0-trainval/' + f'gt_database_{max_sweeps}sweeps_withvelo')
+        db_info_save_path = Path('/home/kpeng/pc14/OpenPCDet/data/v1.0-trainval/'+ f'nuscenes_dbinfos_{max_sweeps}sweeps_withvelo.pkl')
 
         database_save_path.mkdir(parents=True, exist_ok=True)
+        r_path = Path('/home/kpeng/pc14/OpenPCDet/data_seg/v1.0-trainval/')
         all_db_infos = {}
-
+        s_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s')
         for idx in tqdm(range(len(self.infos))):
             sample_idx = idx
             info = self.infos[idx]
@@ -282,7 +285,7 @@ class NuScenesDataset(DatasetTemplate):
                     gt_points.tofile(f)
 
                 if (used_classes is None) or gt_names[i] in used_classes:
-                    db_path = str(filepath.relative_to(self.root_path))  # gt_database/xxxxx.bin
+                    db_path = str(filepath.relative_to(s_path))  # gt_database/xxxxx.bin
                     db_info = {'name': gt_names[i], 'path': db_path, 'image_idx': sample_idx, 'gt_idx': i,
                                'box3d_lidar': gt_boxes[i], 'num_points_in_gt': gt_points.shape[0]}
                     if gt_names[i] in all_db_infos:
@@ -301,7 +304,7 @@ def create_nuscenes_info(version, data_path, save_path, max_sweeps=10):
     from nuscenes.utils import splits
     from . import nuscenes_utils
     data_path = data_path / version
-    save_path = save_path / version
+    save_path = save_path +'/'+ version
 
     assert version in ['v1.0-trainval', 'v1.0-test', 'v1.0-mini']
     if version == 'v1.0-trainval':
@@ -333,13 +336,13 @@ def create_nuscenes_info(version, data_path, save_path, max_sweeps=10):
 
     if version == 'v1.0-test':
         print('test sample: %d' % len(train_nusc_infos))
-        with open(save_path / f'nuscenes_infos_{max_sweeps}sweeps_test.pkl', 'wb') as f:
+        with open(save_path + '/'+ 'nuscenes_infos_{max_sweeps}sweeps_test.pkl', 'wb') as f:
             pickle.dump(train_nusc_infos, f)
     else:
         print('train sample: %d, val sample: %d' % (len(train_nusc_infos), len(val_nusc_infos)))
-        with open(save_path / f'nuscenes_infos_{max_sweeps}sweeps_train.pkl', 'wb') as f:
+        with open(save_path +'/'+ f'nuscenes_infos_{max_sweeps}sweeps_train.pkl', 'wb') as f:
             pickle.dump(train_nusc_infos, f)
-        with open(save_path / f'nuscenes_infos_{max_sweeps}sweeps_val.pkl', 'wb') as f:
+        with open(save_path + '/' + f'nuscenes_infos_{max_sweeps}sweeps_val.pkl', 'wb') as f:
             pickle.dump(val_nusc_infos, f)
 
 
@@ -359,16 +362,16 @@ if __name__ == '__main__':
         dataset_cfg = EasyDict(yaml.load(open(args.cfg_file)))
         ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
         dataset_cfg.VERSION = args.version
-        create_nuscenes_info(
+        """create_nuscenes_info(
             version=dataset_cfg.VERSION,
-            data_path=ROOT_DIR / 'data' / 'nuscenes',
-            save_path=ROOT_DIR / 'data' / 'nuscenes',
+            data_path=ROOT_DIR / 'data_seg',
+            save_path='/home/kpeng/pc14/OpenPCDet/' + 'data_seg/',
             max_sweeps=dataset_cfg.MAX_SWEEPS,
-        )
+        )"""
 
         nuscenes_dataset = NuScenesDataset(
             dataset_cfg=dataset_cfg, class_names=None,
-            root_path=ROOT_DIR / 'data' / 'nuscenes',
+            root_path=ROOT_DIR / 'data_seg',
             logger=common_utils.create_logger(), training=True
         )
         nuscenes_dataset.create_groundtruth_database(max_sweeps=dataset_cfg.MAX_SWEEPS)
