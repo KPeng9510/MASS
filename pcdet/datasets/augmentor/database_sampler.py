@@ -133,7 +133,7 @@ class DataBaseSampler(object):
             obj_points = np.fromfile(str(file_path), dtype=np.float32).reshape(
                     [-1, self.sampler_cfg.NUM_POINT_FEATURES])
             #print(len(obj_points))
-            sys.exit()
+            #sys.exit()
             obj_points[:, :3] += info['box3d_lidar'][:3]
 
             if self.sampler_cfg.get('USE_ROAD_PLANE', False):

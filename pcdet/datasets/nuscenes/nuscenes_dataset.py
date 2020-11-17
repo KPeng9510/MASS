@@ -27,7 +27,7 @@ class NuScenesDataset(DatasetTemplate):
         nuscenes_infos = []
 
         for info_path in self.dataset_cfg.INFO_PATH[mode]:
-            info_path =  Path('/home/kpeng/pc14/OpenPCDet/data/nuscenes/v1.0-trainval')/ info_path
+            info_path =  Path('/home/kpeng/pc14/OpenPCDet/data_seg/v1.0-trainval')/ info_path
             if not info_path.exists():
                 continue
             with open(info_path, 'rb') as f:
@@ -81,8 +81,13 @@ class NuScenesDataset(DatasetTemplate):
 
         lidar_path = self.root_path / sweep_info['lidar_path']
         #print(lidar_path)
-        points_sweep = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 5])[:, :4]
+        points_sweep = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
+        #print(points_sweep.shape)
+        #sys.exit()
         points_sweep = remove_ego_points(points_sweep).T
+        #print(2)
+        #print(sweep_info)
+        #sys.exit()
         if sweep_info['transform_matrix'] is not None:
             num_points = points_sweep.shape[1]
             points_sweep[:3, :] = sweep_info['transform_matrix'].dot(
@@ -94,13 +99,15 @@ class NuScenesDataset(DatasetTemplate):
     def get_lidar_with_sweeps(self, index, max_sweeps=1):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
-        points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 5])[:, :4]
-        
+        points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
+        #print(points.shape)
+        #sys.exit()
 
         sweep_points_list = [points]
         sweep_times_list = [np.zeros((points.shape[0], 1))]
-
+        #print(2)
         for k in np.random.choice(len(info['sweeps']), max_sweeps - 1, replace=False):
+            #print(k)
             points_sweep, times_sweep = self.get_sweep(info['sweeps'][k])
             sweep_points_list.append(points_sweep)
             sweep_times_list.append(times_sweep)
@@ -257,21 +264,24 @@ class NuScenesDataset(DatasetTemplate):
     def create_groundtruth_database(self, used_classes=None, max_sweeps=10):
         import torch
 
-        database_save_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s/v1.0-trainval/' + f'gt_database_{max_sweeps}sweeps_withvelo')
+        database_save_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s_1/v1.0-trainval/' + f'gt_database_{max_sweeps}sweeps_withvelo')
         db_info_save_path = Path('/home/kpeng/pc14/OpenPCDet/data/v1.0-trainval/'+ f'nuscenes_dbinfos_{max_sweeps}sweeps_withvelo.pkl')
 
         database_save_path.mkdir(parents=True, exist_ok=True)
         r_path = Path('/home/kpeng/pc14/OpenPCDet/data_seg/v1.0-trainval/')
         all_db_infos = {}
-        s_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s')
+        s_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s_1')
         for idx in tqdm(range(len(self.infos))):
             sample_idx = idx
             info = self.infos[idx]
+            #print(1)
             points = self.get_lidar_with_sweeps(idx, max_sweeps=max_sweeps)
             gt_boxes = info['gt_boxes']
             gt_names = info['gt_names']
-            print(gt_boxes.shape)
-            sys.exit()
+
+            
+            #print(gt_boxes.shape)
+            #sys.exit()
             box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
                 torch.from_numpy(points[:, 0:3]).unsqueeze(dim=0).float().cuda(),
                 torch.from_numpy(gt_boxes[:, 0:7]).unsqueeze(dim=0).float().cuda()
@@ -281,9 +291,14 @@ class NuScenesDataset(DatasetTemplate):
                 filename = '%s_%s_%d.bin' % (sample_idx, gt_names[i], i)
                 filepath = database_save_path / filename
                 gt_points = points[box_idxs_of_pts == i]
-
+                
                 gt_points[:, :3] -= gt_boxes[i, :3]
-                with open(filepath, 'w') as f:
+                #print(gt_points.dtype)
+                #print(gt_points.shape)
+                #print(filename)
+                #sys.exit()
+                gt_points = gt_points.flatten()
+                with open(filepath, 'wb') as f:
                     gt_points.tofile(f)
 
                 if (used_classes is None) or gt_names[i] in used_classes:
