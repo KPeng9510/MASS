@@ -1,7 +1,7 @@
 from functools import partial
 
 import numpy as np
-
+import sys
 from ...utils import box_utils, common_utils
 
 
@@ -20,6 +20,7 @@ class DataProcessor(object):
         if data_dict is None:
             return partial(self.mask_points_and_boxes_outside_range, config=config)
         mask = common_utils.mask_points_by_range(data_dict['points'], self.point_cloud_range)
+        #print(data_dict['points'].shape)
         data_dict['points'] = data_dict['points'][mask]
         if data_dict.get('gt_boxes', None) is not None and config.REMOVE_OUTSIDE_BOXES and self.training:
             mask = box_utils.mask_boxes_outside_range_numpy(
@@ -59,7 +60,10 @@ class DataProcessor(object):
             return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator)
 
         points = data_dict['points']
+        #print(points.shape)
         voxel_output = voxel_generator.generate(points)
+        #print(voxel_output['voxels'].shape)
+        #sys.exit()
         if isinstance(voxel_output, dict):
             voxels, coordinates, num_points = \
                 voxel_output['voxels'], voxel_output['coordinates'], voxel_output['num_points_per_voxel']
@@ -83,6 +87,7 @@ class DataProcessor(object):
             return data_dict
 
         points = data_dict['points']
+        
         if num_points < len(points):
             pts_depth = np.linalg.norm(points[:, 0:3], axis=1)
             pts_near_flag = pts_depth < 40.0
@@ -123,3 +128,4 @@ class DataProcessor(object):
             data_dict = cur_processor(data_dict=data_dict)
 
         return data_dict
+	

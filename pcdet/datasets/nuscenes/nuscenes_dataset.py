@@ -1,3 +1,4 @@
+
 import copy
 import sys
 import pickle
@@ -85,6 +86,9 @@ class NuScenesDataset(DatasetTemplate):
         #print(points_sweep.shape)
         #sys.exit()
         points_sweep = remove_ego_points(points_sweep).T
+        numpy.set_printoptions(threshold=sys.maxsize)
+
+        #print(points_sweep[:,5])
         #print(2)
         #print(sweep_info)
         #sys.exit()
@@ -100,9 +104,12 @@ class NuScenesDataset(DatasetTemplate):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
         points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
-        #print(points.shape)
+        #points = np.concatenate((points[:,:4],np.expand_dims(points[:,5],axis=-1)),axis=-1)
+        #np.set_printoptions(threshold=np.inf)
+        #print((points[:,5]!=0) & (points[:,5]!=11))
         #sys.exit()
-
+        #semantic_labels=points[:,5]
+        #points = points[:,:]
         sweep_points_list = [points]
         sweep_times_list = [np.zeros((points.shape[0], 1))]
         #print(2)
@@ -116,6 +123,8 @@ class NuScenesDataset(DatasetTemplate):
         times = np.concatenate(sweep_times_list, axis=0).astype(points.dtype)
 
         points = np.concatenate((points, times), axis=1)
+        #print(points[:,5])
+        #sys.exit()
         return points
 
     def __len__(self):

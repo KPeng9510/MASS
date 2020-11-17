@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from .vfe_template import VFETemplate
 
+import sys
 
 class PFNLayer(nn.Module):
     def __init__(self,
@@ -52,7 +53,7 @@ class PFNLayer(nn.Module):
 class PillarVFE(VFETemplate):
     def __init__(self, model_cfg, num_point_features, voxel_size, point_cloud_range):
         super().__init__(model_cfg=model_cfg)
-
+        num_point_features=4
         self.use_norm = self.model_cfg.USE_NORM
         self.with_distance = self.model_cfg.WITH_DISTANCE
         self.use_absolute_xyz = self.model_cfg.USE_ABSLOTE_XYZ
@@ -94,8 +95,10 @@ class PillarVFE(VFETemplate):
     def forward(self, batch_dict, **kwargs):
         
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
-        voxel_features, seg_gt = voxel_features[:,:4], voxel_features[:,5]
-        
+        #print(voxel_features.size())
+        voxel_features, seg_gt = voxel_features[:,:,:4], voxel_features[:,:,5]
+        #print(seg_gt)
+        #sys.exit()
         points_mean = voxel_features[:, :, :3].sum(dim=1, keepdim=True) / voxel_num_points.type_as(voxel_features).view(-1, 1, 1)
         f_cluster = voxel_features[:, :, :3] - points_mean
 
