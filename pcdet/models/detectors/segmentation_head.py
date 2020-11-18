@@ -3,16 +3,22 @@ import numpy as np
 #import pycocotools.mask as mask_util
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-#from ..utils import ConvModule
+from .conv_module import ConvModule
 #from mmdet.core import mask_cross_entropy, mask_target
-
+def mask_cross_entropy(pred, target, label):
+    num_rois = pred.size()[0]
+    inds = torch.arange(0, num_rois, dtype=torch.long, device=pred.device)
+    pred_slice = pred[inds, label].squeeze(1)
+    return F.binary_cross_entropy_with_logits(
+        pred_slice, target, reduction='mean')[None]
 
 class FCNMaskHead(nn.Module):
 
     def __init__(self,
                  num_convs=4,
-                 in_channels=256,
+                 in_channels=64,
                  conv_kernel_size=3,
                  conv_out_channels=256,
                  upsample_method='deconv',
@@ -47,6 +53,7 @@ class FCNMaskHead(nn.Module):
                     in_channels,
                     self.conv_out_channels,
                     3,
+                    stride=2
                     padding=padding,
                     normalize=normalize,
                     bias=self.with_bias))
@@ -85,7 +92,7 @@ class FCNMaskHead(nn.Module):
         mask_pred = self.conv_logits(x)
         return mask_pred
 
-    def get_target(self, sampling_results, gt_masks, rcnn_train_cfg):
+    """def get_target(self, sampling_results, gt_masks, rcnn_train_cfg):
         pos_proposals = [res.pos_bboxes for res in sampling_results]
         pos_assigned_gt_inds = [
             res.pos_assigned_gt_inds for res in sampling_results
@@ -93,7 +100,7 @@ class FCNMaskHead(nn.Module):
         mask_targets = mask_target(pos_proposals, pos_assigned_gt_inds,
                                    gt_masks, rcnn_train_cfg)
         return mask_targets
-
+    """
     def loss(self, mask_pred, mask_targets, labels):
         loss = dict()
         loss_mask = mask_cross_entropy(mask_pred, mask_targets, labels)

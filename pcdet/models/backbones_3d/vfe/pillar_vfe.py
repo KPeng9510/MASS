@@ -1,4 +1,6 @@
 import torch
+
+from ....ops.roiaware_pool3d import roiaware_pool3d_utils
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -93,12 +95,48 @@ class PillarVFE(VFETemplate):
         return paddings_indicator
 
     def forward(self, batch_dict, **kwargs):
-        
+        #print(batch_dict.keys())
+        gt_boxes = batch_dict["gt_boxes"]
+        #print(batch_dict["gt_names"].size())
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
+        
+        v,p,c = voxel_features.size()
+        
+        """
+        for i in range(gt_boxes.size()[0]):
+            points = voxel_features.resize(v*p,c)
+            box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
+                points[:, 0:3].unsqueeze(dim=0).float().cuda(),
+                gt_boxes[:, 0:7].unsqueeze(dim=0).float().cuda()
+            ).long().squeeze(dim=0)
+            torch.set_printoptions(profile="full")
+            print(torch.max(box_idxs_of_pts))
+            print(gt_boxes.size())"""
         voxel_features, seg_gt = voxel_features[:,:,:4], voxel_features[:,:,5]
-        #print(seg_gt)
-        #sys.exit()
+
+        """
+        encode for segmentation gt for each pillar
+
+        """
+        zero_mask = seg_gt == 0
+        length = seg_gt[zero_mask].size()[0]
+        seg_gt_min = torch.min(seg_gt, dim=1,keepdim=True)[0]
+        noise = torch.linspace(-20,-length-20-1,length)
+        seg_gt[zero_mask] = noise.cuda()
+        seg_gt_after = torch.mode(seg_gt.squeeze(),dim=-1,keepdim=True)[0]
+        torch.set_printoptions(profile="full")
+        seg_gt_max = torch.max(seg_gt.squeeze(),dim=-1,keepdim=True)[0]
+        mask_max = seg_gt_max <0
+        seg_gt_max[mask_max]=0
+
+        mask = seg_gt_after < seg_gt_min
+        seg_gt_after[mask] = seg_gt_max[mask]
+        batch_dict["pillar_seg_gt"] = seg_gt_after
+        """
+        encode end for segmentation gt for each pillar
+
+        """
         points_mean = voxel_features[:, :, :3].sum(dim=1, keepdim=True) / voxel_num_points.type_as(voxel_features).view(-1, 1, 1)
         f_cluster = voxel_features[:, :, :3] - points_mean
 
@@ -126,3 +164,6 @@ class PillarVFE(VFETemplate):
         features = features.squeeze()
         batch_dict['pillar_features'] = features
         return batch_dict
+
+
+            

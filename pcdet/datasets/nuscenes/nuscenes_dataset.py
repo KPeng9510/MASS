@@ -156,7 +156,9 @@ class NuScenesDataset(DatasetTemplate):
                 'gt_names': info['gt_names'] if mask is None else info['gt_names'][mask],
                 'gt_boxes': info['gt_boxes'] if mask is None else info['gt_boxes'][mask]
             })
-
+        
+        #print(input_dict['gt_names'])
+        #print(input_dict['gt_boxes'].shape)
         data_dict = self.prepare_data(data_dict=input_dict)
 
         if self.dataset_cfg.get('SET_NAN_VELOCITY_TO_ZEROS', False):
@@ -279,7 +281,7 @@ class NuScenesDataset(DatasetTemplate):
         database_save_path.mkdir(parents=True, exist_ok=True)
         r_path = Path('/home/kpeng/pc14/OpenPCDet/data_seg/v1.0-trainval/')
         all_db_infos = {}
-        s_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s_1')
+        s_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s_1_test')
         for idx in tqdm(range(len(self.infos))):
             sample_idx = idx
             info = self.infos[idx]
@@ -295,7 +297,9 @@ class NuScenesDataset(DatasetTemplate):
                 torch.from_numpy(points[:, 0:3]).unsqueeze(dim=0).float().cuda(),
                 torch.from_numpy(gt_boxes[:, 0:7]).unsqueeze(dim=0).float().cuda()
             ).long().squeeze(dim=0).cpu().numpy()
-
+            np.set_printoptions(threshold=np.inf)
+            print(box_idxs_of_pts)
+            sys.exit()
             for i in range(gt_boxes.shape[0]):
                 filename = '%s_%s_%d.bin' % (sample_idx, gt_names[i], i)
                 filepath = database_save_path / filename
