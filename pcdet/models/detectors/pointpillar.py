@@ -13,6 +13,7 @@ class PointPillar(Detector3DTemplate):
         for cur_module in self.module_list:
             module_index += 1
             batch_dict = cur_module(batch_dict)
+            """
             if module_index == 3:
                 #print(batch_dict.keys())
                 #print(batch_dict["spatial_features_2d"].size())
@@ -25,11 +26,12 @@ class PointPillar(Detector3DTemplate):
                 loss_seg = F.binary_cross_entropy_with_logits(pred_seg,targets,reduction='mean')
                 #print(loss_seg)
                 #sys.exit()
+            """
         if self.training:
             loss, tb_dict, disp_dict = self.get_training_loss()
 
             ret_dict = {
-                'loss': loss+loss_seg
+                'loss': loss
             }
             return ret_dict, tb_dict, disp_dict
         else:
