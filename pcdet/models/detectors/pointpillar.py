@@ -1,5 +1,5 @@
 from .detector3d_template import Detector3DTemplate
-#from .segmentation_head import FCNMaskHead
+from .segmentation_head import FCNMaskHead
 import sys
 from .erfnet import Net
 import torch.nn.functional as F
@@ -7,7 +7,7 @@ class PointPillar(Detector3DTemplate):
     def __init__(self, model_cfg, num_class, dataset):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
-        self.segmentation_head = Net(num_classes=12)
+        self.segmentation_head = FCNMaskHead()
     def forward(self, batch_dict):
         module_index = 0
         for cur_module in self.module_list:
@@ -17,7 +17,7 @@ class PointPillar(Detector3DTemplate):
                 #print(batch_dict.keys())
                 #print(batch_dict["spatial_features_2d"].size())
                 #print(batch_dict["spatial_features"].size())
-                spatial_features = batch_dict["spatial_features"]
+                spatial_features = batch_dict["spatial_features_2d"]
                 pred_seg = self.segmentation_head(spatial_features)
                 targets = batch_dict['one_hot']
                 #print(pred_seg.size())

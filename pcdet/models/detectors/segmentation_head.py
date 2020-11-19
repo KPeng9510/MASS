@@ -18,11 +18,11 @@ class FCNMaskHead(nn.Module):
 
     def __init__(self,
                  num_convs=4,
-                 in_channels=64,
+                 in_channels=384,
                  conv_kernel_size=3,
-                 conv_out_channels=256,
+                 conv_out_channels=384,
                  upsample_method='deconv',
-                 upsample_ratio=2,
+                 upsample_ratio=4,
                  num_classes=12,
                  class_agnostic=False,
                  normalize=None):
@@ -53,7 +53,7 @@ class FCNMaskHead(nn.Module):
                     in_channels,
                     self.conv_out_channels,
                     3,
-                    stride=2
+                    
                     padding=padding,
                     normalize=normalize,
                     bias=self.with_bias))
