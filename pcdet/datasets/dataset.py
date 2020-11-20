@@ -41,6 +41,7 @@ class DatasetTemplate(torch_data.Dataset):
 
     @property
     def mode(self):
+
         return 'train' if self.training else 'test'
 
     def __getstate__(self):

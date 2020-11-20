@@ -101,6 +101,8 @@ class PillarVFE(VFETemplate):
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
         
+        #print(batch_dict.keys())
+        #sys.exit()
         v,p,c = voxel_features.size()
         
         """
@@ -112,8 +114,10 @@ class PillarVFE(VFETemplate):
             ).long().squeeze(dim=0)
             torch.set_printoptions(profile="full")
             print(torch.max(box_idxs_of_pts))
-            print(gt_boxes.size())"""
+            print(gt_boxes.size())
+        """
         voxel_features, seg_gt = voxel_features[:,:,:4], voxel_features[:,:,5]
+        
 
         """
         encode for segmentation gt for each pillar
@@ -149,7 +153,7 @@ class PillarVFE(VFETemplate):
             features = [voxel_features, f_cluster, f_center]
         else:
             features = [voxel_features[..., 3:], f_cluster, f_center]
-
+        batch_dict["points_mean"]=points_mean
         if self.with_distance:
             points_dist = torch.norm(voxel_features[:, :, :3], 2, 2, keepdim=True)
             features.append(points_dist)

@@ -4,7 +4,7 @@ import os
 import torch
 import tqdm
 from torch.nn.utils import clip_grad_norm_
-
+import sys
 
 def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, accumulated_iter, optim_cfg,
                     rank, tbar, total_it_each_epoch, dataloader_iter, tb_log=None, leave_pbar=False):
@@ -34,7 +34,9 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
 
         model.train()
         optimizer.zero_grad()
-
+        #print("batch_information")
+        #print(batch.keys())
+        #sys.exit()
         loss, tb_dict, disp_dict = model_func(model, batch)
 
         loss.backward()
