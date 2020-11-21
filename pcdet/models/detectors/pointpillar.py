@@ -86,16 +86,33 @@ class PointPillar(Detector3DTemplate):
                     #box_idxs_of_pts[mask] = -1
                     #box_idxs_of_pts += 1
                     #print(target_cr)
-                    limit = torch.max(target_cr)+1
+                    limit = torch.max(target_cr)
+                    
+                    #sys.exit()
                     #print(limit)
                     #print(limit)
-                    box_idxs_pillar = one_hot(target_cr.to(torch.int64).view(1,1,h,w), limit.to(torch.int64))
-                    driveable_area = torch.zeros([1,1,h,w],dtype=box_idxs_pillar.dtype, device=box_idxs_pillar.device)
-                    box_idxs_pillar = torch.cat([box_idxs_pillar[:,:limit.int()-1,:,:],driveable_area,box_idxs_pillar[:,-1,:,:].unsqueeze(1)],dim=1)
+                    target_cr = target_cr.view(1,1,h,w)
+                    target_label = torch.zeros([1,1,h,12], dtype=target_cr.dtype, device = target_cr.device)
+                    for i in range(12):
+                        target_label[:,:,:,i] = i
+                    target_cr = torch.cat([target_cr,target_label],dim=-1)
+                    box_idxs_pillar = one_hot(target_cr.to(torch.int64), 12)
+                    box_idxs_pillar = box_idxs_pillar[:,:,:,:w]
+                    #driveable_area = torch.zeros([1,1,h,w],dtype=box_idxs_pillar.dtype, device=box_idxs_pillar.device)
+                    #box_idxs_pillar = torch.cat([box_idxs_pillar[:,:limit.int()-1,:,:],driveable_area,box_idxs_pillar[:,-1,:,:].unsqueeze(1)],dim=1)
+                    """
+                    for i in range(12):
+                         print(target_cr.size())
+                         #sys.exit()
+                         judgement = (target_cr.view(1,1,w,h).int() == i)
+                         print(judgement)
+                         if ((target_cr == i).byte().float().nonzero().size()[0] == 0):
+                             new_tensor = torch.zeros([1,1,h,w],dtype=box_idxs_pillar.dtype, device=box_idxs_pillar.device)
+                             box_idxs_pillar = torch.cat([box_idxs_pillar[:,:i,:,:], new_tensor[:,:,:,:], box_idxs_pillar[:,i:,:,:]])
                     #print(box_idxs_pillar.size())
                     #print(gt_boxes.size()[1])
                     
-                    
+                    """
                     dict_seg.append(box_idxs_pillar)
                     #print(dict_seg[0].size())
                     #sys.exit()
@@ -127,7 +144,7 @@ class PointPillar(Detector3DTemplate):
             loss, tb_dict, disp_dict = self.get_training_loss()
 
             ret_dict = {
-                'loss': loss
+                'loss': loss + loss_seg
             }
             return ret_dict, tb_dict, disp_dict
         else:
