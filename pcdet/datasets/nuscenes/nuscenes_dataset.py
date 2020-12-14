@@ -103,6 +103,8 @@ class NuScenesDataset(DatasetTemplate):
     def get_lidar_with_sweeps(self, index, max_sweeps=1):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
+        print(self.root_path)
+        sys.exit()
         points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
         #points = np.concatenate((points[:,:4],np.expand_dims(points[:,5],axis=-1)),axis=-1)
         #np.set_printoptions(threshold=np.inf)
