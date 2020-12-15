@@ -55,7 +55,7 @@ class PFNLayer(nn.Module):
 class PillarVFE(VFETemplate):
     def __init__(self, model_cfg, num_point_features, voxel_size, point_cloud_range):
         super().__init__(model_cfg=model_cfg)
-        num_point_features=4
+        num_point_features=5
         self.use_norm = self.model_cfg.USE_NORM
         self.with_distance = self.model_cfg.WITH_DISTANCE
         self.use_absolute_xyz = self.model_cfg.USE_ABSLOTE_XYZ
@@ -85,6 +85,7 @@ class PillarVFE(VFETemplate):
 
     def get_output_feature_dim(self):
         return self.num_filters[-1]
+    
 
     def get_paddings_indicator(self, actual_num, max_num, axis=0):
         actual_num = torch.unsqueeze(actual_num, axis + 1)
@@ -100,7 +101,18 @@ class PillarVFE(VFETemplate):
         #print(batch_dict["gt_names"].size())
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
+        dense_gt = batch_dict['dense_pillar'][:,:,-2]
+        coor = batch_dict['dense_pillar_coords']
+        """
+        merge sem gt
+        """
         
+        #mask_zero = voxel_features[:,:,-2] == 0
+        seg_gt = voxel_features[:,:,5]
+        #seg_get[mask_zero] == dense[:,:,-2][mask_zero]
+        """
+        end
+        """
         #print(batch_dict.keys())
         #sys.exit()
         v,p,c = voxel_features.size()
@@ -116,11 +128,33 @@ class PillarVFE(VFETemplate):
             print(torch.max(box_idxs_of_pts))
             print(gt_boxes.size())
         """
-        voxel_features, seg_gt = voxel_features[:,:,:4], voxel_features[:,:,5]
-        
+        voxel_features= torch.cat([voxel_features[:,:,:4],voxel_features[:,:,-1].unsqueeze(-1)],dim=-1)
 
         """
         encode for segmentation gt for each pillar
+
+        """
+        zero_mask = dense_gt == 0
+        length = dense_gt[zero_mask].size()[0]
+        dense_gt_min = torch.min(dense_gt, dim=1,keepdim=True)[0]
+        noise = torch.linspace(-20,-length-20-1,length)
+        dense_gt[zero_mask] = noise.cuda()
+        dense_gt_after = torch.mode(dense_gt.squeeze(),dim=-1,keepdim=True)[0]
+        torch.set_printoptions(profile="full")
+        dense_gt_max = torch.max(dense_gt.squeeze(),dim=-1,keepdim=True)[0]
+        mask_max = dense_gt_max <0
+        dense_gt_max[mask_max]=0
+
+        mask = dense_gt_after < dense_gt_min
+        dense_gt_after[mask] = dense_gt_max[mask]
+        batch_dict["pillar_dense_gt"] = dense_gt_after
+        """
+        encode end for segmentation gt for each pillar
+
+        """
+
+        """
+        encode for dense segmentation gt for each pillar
 
         """
         zero_mask = seg_gt == 0
@@ -141,6 +175,7 @@ class PillarVFE(VFETemplate):
         encode end for segmentation gt for each pillar
 
         """
+
         points_mean = voxel_features[:, :, :3].sum(dim=1, keepdim=True) / voxel_num_points.type_as(voxel_features).view(-1, 1, 1)
         f_cluster = voxel_features[:, :, :3] - points_mean
 

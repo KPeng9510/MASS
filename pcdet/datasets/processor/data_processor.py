@@ -60,8 +60,11 @@ class DataProcessor(object):
             return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator)
 
         points = data_dict['points']
+        #print(data_dict.keys())
+        dense_points = data_dict['dense_point']
         #print(points.shape)
         voxel_output = voxel_generator.generate(points)
+        voxel_dense = voxel_generator.generate(dense_points)
         #print(voxel_output['voxels'].shape)
         #sys.exit()
         if isinstance(voxel_output, dict):
@@ -72,7 +75,8 @@ class DataProcessor(object):
 
         if not data_dict['use_lead_xyz']:
             voxels = voxels[..., 3:]  # remove xyz in voxels(N, 3)
-
+        data_dict['dense_pillar'] = voxel_dense['voxels']
+        data_dict['dense_pillar_coords'] = voxel_dense['coordinates']
         data_dict['voxels'] = voxels
         data_dict['voxel_coords'] = coordinates
         data_dict['voxel_num_points'] = num_points
@@ -126,6 +130,7 @@ class DataProcessor(object):
 
         for cur_processor in self.data_processor_queue:
             data_dict = cur_processor(data_dict=data_dict)
-
+        #print(2)
+        #sys.exit()
         return data_dict
 	

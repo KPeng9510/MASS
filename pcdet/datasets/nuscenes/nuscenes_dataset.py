@@ -175,8 +175,8 @@ class NuScenesDataset(DatasetTemplate):
             
         if not self.dataset_cfg.PRED_VELOCITY and 'gt_boxes' in data_dict:
             data_dict['gt_boxes'] = data_dict['gt_boxes'][:, [0, 1, 2, 3, 4, 5, 6, -1]]
-        print(data_dict.keys())
-        sys.exit()
+        #print(data_dict.keys())
+        #sys.exit()
         return data_dict
 
     @staticmethod

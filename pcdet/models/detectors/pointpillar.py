@@ -96,7 +96,7 @@ class PointPillar(Detector3DTemplate):
                     for i in range(12):
                         target_label[:,:,:,i] = i
                     target_cr = torch.cat([target_cr,target_label],dim=-1)
-                    box_idxs_pillar = one_hot(target_cr.to(torch.int64), 12)
+                    box_idxs_pillar = one_hot(target_cr.to(torch.int64), 16)
                     box_idxs_pillar = box_idxs_pillar[:,:,:,:w]
                     #driveable_area = torch.zeros([1,1,h,w],dtype=box_idxs_pillar.dtype, device=box_idxs_pillar.device)
                     #box_idxs_pillar = torch.cat([box_idxs_pillar[:,:limit.int()-1,:,:],driveable_area,box_idxs_pillar[:,-1,:,:].unsqueeze(1)],dim=1)
