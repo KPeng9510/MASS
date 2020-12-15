@@ -1,5 +1,5 @@
 DATASET: 'NuScenesDataset'
-DATA_PATH: '../data_seg/'
+DATA_PATH: '../../data_new/'
 
 VERSION: 'v1.0-trainval'
 MAX_SWEEPS: 1

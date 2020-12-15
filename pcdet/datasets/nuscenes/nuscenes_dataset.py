@@ -82,6 +82,8 @@ class NuScenesDataset(DatasetTemplate):
 
         lidar_path = self.root_path / sweep_info['lidar_path']
         #print(lidar_path)
+        dense_path = self.root_path/dense/(sweep_info['lidar_path'].split('/')[2])
+        
         points_sweep = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
         #print(points_sweep.shape)
         #sys.exit()
@@ -103,8 +105,9 @@ class NuScenesDataset(DatasetTemplate):
     def get_lidar_with_sweeps(self, index, max_sweeps=1):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
-        print(self.root_path)
-        sys.exit()
+        dense_path = self.root_path/'dense'/(info['lidar_path'].split('/')[2])
+        dense_point = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1,6])[:,:6]
+        #sys.exit()
         points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
         #points = np.concatenate((points[:,:4],np.expand_dims(points[:,5],axis=-1)),axis=-1)
         #np.set_printoptions(threshold=np.inf)
@@ -125,9 +128,10 @@ class NuScenesDataset(DatasetTemplate):
         times = np.concatenate(sweep_times_list, axis=0).astype(points.dtype)
 
         points = np.concatenate((points, times), axis=1)
+        
         #print(points[:,5])
         #sys.exit()
-        return points
+        return points, dense_point
 
     def __len__(self):
         if self._merge_all_iters_to_one_epoch:
@@ -140,10 +144,11 @@ class NuScenesDataset(DatasetTemplate):
             index = index % len(self.infos)
 
         info = copy.deepcopy(self.infos[index])
-        points = self.get_lidar_with_sweeps(index, max_sweeps=self.dataset_cfg.MAX_SWEEPS)
+        points, dense_point = self.get_lidar_with_sweeps(index, max_sweeps=self.dataset_cfg.MAX_SWEEPS)
 
         input_dict = {
             'points': points,
+            'dense_point': dense_point,
             'frame_id': Path(info['lidar_path']).stem,
             'metadata': {'token': info['token']}
         }
@@ -162,15 +167,16 @@ class NuScenesDataset(DatasetTemplate):
         #print(input_dict['gt_names'])
         #print(input_dict['gt_boxes'].shape)
         data_dict = self.prepare_data(data_dict=input_dict)
-
+        data_dict['dense_point'] = dense_point
         if self.dataset_cfg.get('SET_NAN_VELOCITY_TO_ZEROS', False):
             gt_boxes = data_dict['gt_boxes']
             gt_boxes[np.isnan(gt_boxes)] = 0
             data_dict['gt_boxes'] = gt_boxes
-
+            
         if not self.dataset_cfg.PRED_VELOCITY and 'gt_boxes' in data_dict:
             data_dict['gt_boxes'] = data_dict['gt_boxes'][:, [0, 1, 2, 3, 4, 5, 6, -1]]
-
+        print(data_dict.keys())
+        sys.exit()
         return data_dict
 
     @staticmethod
