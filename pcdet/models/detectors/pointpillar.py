@@ -92,8 +92,8 @@ class PointPillar(Detector3DTemplate):
                     #print(limit)
                     #print(limit)
                     target_cr = target_cr.view(1,1,h,w)
-                    target_label = torch.zeros([1,1,h,12], dtype=target_cr.dtype, device = target_cr.device)
-                    for i in range(12):
+                    target_label = torch.zeros([1,1,h,16], dtype=target_cr.dtype, device = target_cr.device)
+                    for i in range(16):
                         target_label[:,:,:,i] = i
                     target_cr = torch.cat([target_cr,target_label],dim=-1)
                     box_idxs_pillar = one_hot(target_cr.to(torch.int64), 16)
