@@ -41,7 +41,7 @@ class DataProcessor(object):
 
         return data_dict
 
-    def transform_points_to_voxels(self, data_dict=None, config=None, voxel_generator=None):
+    def transform_points_to_voxels(self, data_dict=None, config=None, voxel_generator=None, voxel_generator_2=None):
         if data_dict is None:
             try:
                 from spconv.utils import VoxelGeneratorV2 as VoxelGenerator
@@ -54,17 +54,24 @@ class DataProcessor(object):
                 max_num_points=config.MAX_POINTS_PER_VOXEL,
                 max_voxels=config.MAX_NUMBER_OF_VOXELS[self.mode]
             )
+            voxel_generator_2 = VoxelGenerator(
+                voxel_size=config.VOXEL_SIZE,
+                point_cloud_range=self.point_cloud_range,
+                max_num_points=config.MAX_POINTS_PER_VOXEL,
+                max_voxels=60000
+            )
             grid_size = (self.point_cloud_range[3:6] - self.point_cloud_range[0:3]) / np.array(config.VOXEL_SIZE)
             self.grid_size = np.round(grid_size).astype(np.int64)
             self.voxel_size = config.VOXEL_SIZE
-            return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator)
-
+            return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator, voxel_generator_2 = voxel_generator_2)
+        
         points = data_dict['points']
         #print(data_dict.keys())
         dense_points = data_dict['dense_point']
         #print(points.shape)
         voxel_output = voxel_generator.generate(points)
         voxel_dense = voxel_generator.generate(dense_points)
+        #print(voxel_dense[...,-1])
         #print(voxel_output['voxels'].shape)
         #sys.exit()
         if isinstance(voxel_output, dict):

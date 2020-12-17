@@ -102,6 +102,8 @@ class PillarVFE(VFETemplate):
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
         dense_gt = batch_dict['dense_pillar'][:,:,-2]
+        #print(dense_gt)
+        #sys.exit()
         coor = batch_dict['dense_pillar_coords']
         """
         merge sem gt
@@ -171,6 +173,8 @@ class PillarVFE(VFETemplate):
         mask = seg_gt_after < seg_gt_min
         seg_gt_after[mask] = seg_gt_max[mask]
         batch_dict["pillar_seg_gt"] = seg_gt_after
+        #print(seg_gt_after)
+        #sys.exit()
         """
         encode end for segmentation gt for each pillar
 

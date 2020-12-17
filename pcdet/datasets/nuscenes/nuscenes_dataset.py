@@ -107,11 +107,14 @@ class NuScenesDataset(DatasetTemplate):
         lidar_path = self.root_path / info['lidar_path']
         dense_path = self.root_path/'dense'/(info['lidar_path'].split('/')[2])
         dense_point = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1,6])[:,:6]
+        np.set_printoptions(threshold=np.inf)
+        #print(dense_point[:,-1])
         #sys.exit()
         points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
         #points = np.concatenate((points[:,:4],np.expand_dims(points[:,5],axis=-1)),axis=-1)
         #np.set_printoptions(threshold=np.inf)
         #print((points[:,5]!=0) & (points[:,5]!=11))
+        #print(points[:,-1])
         #sys.exit()
         #semantic_labels=points[:,5]
         #points = points[:,:]
@@ -128,7 +131,8 @@ class NuScenesDataset(DatasetTemplate):
         times = np.concatenate(sweep_times_list, axis=0).astype(points.dtype)
 
         points = np.concatenate((points, times), axis=1)
-        
+        times = np.zeros((dense_point.shape[0], 1))
+        dense_point = np.concatenate((dense_point, times), axis=1)
         #print(points[:,5])
         #sys.exit()
         return points, dense_point
@@ -335,6 +339,15 @@ class NuScenesDataset(DatasetTemplate):
 
         with open(db_info_save_path, 'wb') as f:
             pickle.dump(all_db_infos, f)
+
+class NuScenesDatasetD6(NuScenesDataset):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        if len(self.infos) > 28000:
+            self.infos = list(
+                sorted(self.infos, key=lambda e: e["timestamp"]))
+            self.infos = self.infos[::6]
+
 
 
 def create_nuscenes_info(version, data_path, save_path, max_sweeps=10):

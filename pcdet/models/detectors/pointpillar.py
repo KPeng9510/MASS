@@ -6,6 +6,8 @@ import os
 import torch.nn.functional as F
 import torch
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
+from PIL import Image
+import numpy as np
 def one_hot(labels, num_classes):
     '''
     Converts an integer label torch.autograd.Variable to a one-hot Variable.
@@ -32,6 +34,7 @@ class PointPillar(Detector3DTemplate):
     def forward(self, batch_dict):
         module_index = 0
         #print(batch_dict.keys())
+        #sys.exit()
         for cur_module in self.module_list:
             module_index += 1
             batch_dict = cur_module(batch_dict)
@@ -43,13 +46,16 @@ class PointPillar(Detector3DTemplate):
                 """
                   encode bbox
                 """
+                #print(batch_dict.keys())
+                #sys.exit()
                 points_mean = batch_dict["pointsmean"]
                 #print(points_mean.size())
                 gt_boxes = batch_dict["gt_boxes"]
                 batch,c,h,w = points_mean.size()
                 dict_seg = []
                 dict_cls_num = []
-                
+                label_b = batch_dict["labels_seg"]
+
                 
                 for i in range(gt_boxes.size()[0]):
                     #os.environ['CUDA_LAUNCH_BLOCKING'] = "1" 
@@ -58,15 +64,17 @@ class PointPillar(Detector3DTemplate):
                     points[:, 0:3].unsqueeze(dim=0).float().cuda(),
                     gt_boxes[i,:, 0:7].unsqueeze(dim=0).float().cuda()
                     ).long().squeeze(dim=0)
-                    
+                    label = label_b[i].flatten()
                     gt_boxes_indx = gt_boxes[i,:,-1]
-                    
+                    #print(label)
                     """
                     if i == 1:
                         sys.exit()
                     """
                     #nonzero_number = torch.sum(nonzero_mask.float())
-                    
+                    #print(gt_boxes_indx)
+                    #print(box_idxs_of_pts.max())
+                    #sys.exit()
                     #print(nonzero_number)
                     #print(gt_boxes_indx.size())
                     #if i == 1:
@@ -74,7 +82,14 @@ class PointPillar(Detector3DTemplate):
                     #gt_boxes_indx = gt_boxes_indx[:nonzero_number.int()]
                     gt_boxes_indx = torch.cat([torch.Tensor([0]).cuda(),gt_boxes_indx],dim=0)
                     box_idxs_of_pts +=1
-                    target_cr = gt_boxes_indx[box_idxs_of_pts.long()]
+                    #print(gt_boxes_indx)
+                    # = target_cr != 0
+                    nonzero_mask = (label ==0)
+                    label[nonzero_mask] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask]
+                    nonzero_mask_2 = gt_boxes_indx[box_idxs_of_pts.long()] != 0
+                    label[nonzero_mask_2] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2]
+                    #print(label)
+                    #sys.exit()
                     #print(target_cr)
                     #print(max(box_idxs_of_pts))
                     
@@ -86,12 +101,20 @@ class PointPillar(Detector3DTemplate):
                     #box_idxs_of_pts[mask] = -1
                     #box_idxs_of_pts += 1
                     #print(target_cr)
+                    target_cr = label
                     limit = torch.max(target_cr)
                     
                     #sys.exit()
                     #print(limit)
                     #print(limit)
-                    target_cr = target_cr.view(1,1,h,w)
+                    
+                    #print(target_cr.size())
+                    target_cr = label.view(1,1,h,w)
+                    #target_cr = torch.cat([target_cr, target_cr, target_cr], dim=-1)
+                    #print(target_cr.size())
+                    #im = Image.fromarray((target_cr.int().cpu().numpy()*10), 'RGB')
+                    #im.save("/mrtstorage/users/kpeng/target.png")
+                    #sys.exit()
                     target_label = torch.zeros([1,1,h,16], dtype=target_cr.dtype, device = target_cr.device)
                     for i in range(16):
                         target_label[:,:,:,i] = i
@@ -123,8 +146,11 @@ class PointPillar(Detector3DTemplate):
                 """
                  end
                 """
-                
+                #print(dict_seg[0].size())
+                #im = Image.fromarray(dict_seg[0].view([512,512,1]).cpu().numpy()*10)
+                #im.save("/mrtstorage/users/kpeng/target.jpg")
                 targets_crr = torch.cat(dict_seg,dim=0)
+                #sys.exit()
                 #print(batch_dict.keys())
                 #print(batch_dict["spatial_features_2d"].size())
                 #print(batch_dict["spatial_features"].size())
@@ -144,7 +170,7 @@ class PointPillar(Detector3DTemplate):
             loss, tb_dict, disp_dict = self.get_training_loss()
 
             ret_dict = {
-                'loss': loss + loss_seg
+                'loss': loss + 0.8*loss_seg
             }
             return ret_dict, tb_dict, disp_dict
         else:

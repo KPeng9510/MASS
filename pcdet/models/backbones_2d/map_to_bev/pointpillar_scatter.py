@@ -71,6 +71,8 @@ class PointPillarScatter(nn.Module):
             gts = dense_seg[batch_mask, :]
             gts = gts.t()
             spatial_dense[:, indices] = gts
+            #print(indices.size())
+            #print(spatial_dense)
             batch_spatial_dense.append(spatial_dense)
 
         """
@@ -87,12 +89,15 @@ class PointPillarScatter(nn.Module):
         batch_seg_labels = batch_spatial_features[:,-4,:,:].unsqueeze(1)
         
         zero_mask = batch_seg_labels == 0
-        batch_seg_labels[zero_mask] == batch_spatial_dense[zero_mask]
+        batch_seg_labels[zero_mask] = batch_spatial_dense[zero_mask]
+        #print(batch_spatial_dense[zero_mask])
+        #sys.exit()
         """
             end
         """
         #batch_spatial_features = batch_spatial_features.view(batch_size, (self.num_bev_features+4) * self.nz, self.ny, self.nx)
         #batch_seg_labels = batch_spatial_features[:,-4,:,:].unsqueeze(1)
+        batch_dict["labels_seg"] = batch_seg_labels
         onehot_labels = one_hot(batch_seg_labels.to(torch.int64),16)
         batch_pointsmean = batch_spatial_features[:,-3:,:,:]
         batch_dict["pointsmean"] = batch_pointsmean
