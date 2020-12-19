@@ -27,12 +27,12 @@ class PointPillarScatter(nn.Module):
         self.model_cfg = model_cfg
         self.num_bev_features = self.model_cfg.NUM_BEV_FEATURES
         self.nx, self.ny, self.nz = grid_size
-        #self.conv_pillar = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=0,bias=False)
-        #self.conv_visi = nn.Conv2d(40,64,kernel_size=3,stride=1,padding=0,bias=False)
-        #self.conv_visi_2 = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=0,bias=False)
-        #self.relu = nn.ReLU()
-        #self.zp = nn.ZeroPad2d(1)
-        #self.softmax = nn.Softmax(dim=-1)
+        self.conv_pillar = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=1,bias=False)
+        self.conv_visi = nn.Conv2d(40,64,kernel_size=3,stride=1,padding=1,bias=False)
+        self.conv_visi_2 = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=1,bias=False)
+        self.relu = nn.ReLU()
+        self.zp = nn.ZeroPad2d(1)
+        self.softmax = nn.Softmax(dim=-1)
         assert self.nz == 1
 
     def forward(self, batch_dict, **kwargs):
@@ -40,7 +40,7 @@ class PointPillarScatter(nn.Module):
         pillar_seg = batch_dict["pillar_seg_gt"]
         dense_seg = batch_dict["pillar_dense_gt"]
         dense_coor = batch_dict["dense_pillar_coords"]
-        visibility = batch_dict['visibility'].to(torch.float32) # 2, 40, 512, 512
+        visibility = batch_dict['vis'].to(torch.float32).permute(0,3,1,2) # 2, 40, 512, 512
         #print(visibility[0,2,:100,:100])
         #sys.exit()
         points_mean = batch_dict["points_mean"].squeeze()
@@ -107,28 +107,29 @@ class PointPillarScatter(nn.Module):
         """
         #batch_spatial_features = batch_spatial_features.view(batch_size, (self.num_bev_features+4) * self.nz, self.ny, self.nx)
         #batch_seg_labels = batch_spatial_features[:,-4,:,:].unsqueeze(1)
-        batch_dict["labels_seg"] = batch_seg_labels
-        line = torch.zeros([2,1,512,16]).cuda()
-        for i in range(16):
-            line[:,:,:,-1]=i
-        batch_seg_labels = torch.cat([batch_seg_labels, line], dim=-1)
-        onehot_labels = one_hot(batch_seg_labels.to(torch.int64),16)
-        onehot_labels = onehot_labels[:,:,:,:512]
+        batch_dict['labels_seg'] = batch_seg_labels
+        #line = torch.zeros([2,1,512,16]).cuda()
+        #for i in range(16):
+        #    line[:,:,:,-1]=i
+        #batch_seg_labels = torch.cat([batch_seg_labels, line], dim=-1)
+        #onehot_labels = one_hot(batch_seg_labels.to(torch.int64),16)
+        #onehot_labels = onehot_labels[:,:,:,:512]
         batch_pointsmean = batch_spatial_features[:,64:,:,:]
-        batch_dict["pointsmean"] = batch_pointsmean
+        batch_dict['pointsmean'] = batch_pointsmean
         
         batch_spatial_features = batch_spatial_features[:, :self.num_bev_features,:,:]
-        #re_f = self.zp(batch_spatial_features)
-        #re_f = self.conv_pillar(re_f)
+        re_f = self.zp(batch_spatial_features)
+        re_f = self.conv_pillar(re_f)
         #visibility = self.zp(visibility)
-        #visibility = self.relu(self.conv_visi(visibility))
-        #re_v = self.conv_visi_2(visibility)
-
-        #re_f = self.conv_pillar(batch_spatial_features)
-        #attention = self.softmax(torch.cat([re_v,re_f],dim=1))
-        #re_v = attention[:,0,:,:]*re_v
-        #re_f = attention[:,1,:,:]*re_f
-        #batch_spatial_features = re_v+re_f
+        visibility = self.relu(self.conv_visi(visibility))
+        re_v = self.conv_visi_2(visibility)
+        
+        re_f = self.conv_pillar(batch_spatial_features)
+        attention = self.softmax(torch.cat([re_v,re_f],dim=1))
+        re_v = attention[:,0,:,:].unsqueeze(1).repeat(1,64,1,1)*re_v
+        re_f = attention[:,1,:,:].unsqueeze(1).repeat(1,64,1,1)*re_f
+        batch_spatial_features = re_v+re_f
         batch_dict['spatial_features'] = batch_spatial_features
-        batch_dict['one_hot']=onehot_labels
+        #batch_dict['one_hot']=onehot_labels
+        #print('vis' in batch_dict.keys())
         return batch_dict

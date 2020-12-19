@@ -49,6 +49,7 @@ class PointPillar(Detector3DTemplate):
                 #print(batch_dict.keys())
                 #sys.exit()
                 points_mean = batch_dict["points_coor"]
+                
                 #print(points_mean.size())
                 gt_boxes = batch_dict["gt_boxes"]
                 #batch,c,h,w = points_mean.size()
@@ -64,12 +65,14 @@ class PointPillar(Detector3DTemplate):
                     points = points_mean
                     #print(points[:100,:])
                     #sys.exit()
+                    #torch.cuda.set_device(0)
                     box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
                     points[:, 0:3].unsqueeze(dim=0).float().cuda(),
-                    gt_boxes[i,:, 0:7].unsqueeze(dim=0).float().cuda()
+                    gt_boxes[i,:, 0:7].unsqueeze(dim=0).float().cuda(),
                     ).long().squeeze(dim=0)
                     label = label_b[i].flatten()
                     gt_boxes_indx = gt_boxes[i,:,-1]
+                    print(box_idxs_of_pts.device)
                     #print(label)
                     """
                     if i == 1:
@@ -84,7 +87,14 @@ class PointPillar(Detector3DTemplate):
                     #if i == 1:
                     #    sys.exit()
                     #gt_boxes_indx = gt_boxes_indx[:nonzero_number.int()]
-                    gt_boxes_indx = torch.cat([torch.Tensor([0]).cuda(),gt_boxes_indx],dim=0)
+                    #zero = torch.zeros([1,1], device=gt_boxes_indx.device)
+                    #print(gt_boxes_indx.size()[0]+1)
+                    s=gt_boxes_indx.size()[0]+1
+                    gt_b = torch.zeros([s],device=gt_boxes_indx.device)
+                    gt_b[1:] += gt_boxes_indx
+                    gt_boxes_indx = gt_b
+                    #sys.exit()
+                    #gt_boxes_indx = torch.cat([zero,gt_boxes_indx],dim=0)
                     box_idxs_of_pts +=1
                     #print(gt_boxes_indx)
                     # = target_cr != 0
@@ -171,9 +181,9 @@ class PointPillar(Detector3DTemplate):
                 #sys.exit()
 
                 #targets = batch_dict['one_hot']
-                tar = torch.argmax(batch_dict['one_hot'],dim=1)
-                tar_crr = torch.argmax(targets_crr, dim=1)
-                mask = tar_crr == 0
+                #tar = torch.argmax(batch_dict['one_hot'],dim=1)
+                #tar_crr = torch.argmax(targets_crr, dim=1)
+                #mask = tar_crr == 0
                 
 
 
@@ -181,7 +191,7 @@ class PointPillar(Detector3DTemplate):
                 pred = torch.argmax(pred_seg, dim=1)
                 
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                #targets = targets_crr
+                targets = targets_crr
                 target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
                 

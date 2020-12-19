@@ -117,7 +117,7 @@ class DataProcessor(object):
         visi_map[mask_unknown[0], mask_unknown[1], :] = np.array([0,0,255])/255
         #print(.shape)
         #visibility = np.pad(visibility, ((0,2),(0,0)), 'edge')
-        data_dict['visibility'] = visibility
+        data_dict['vis'] = visibility
         #print(data_dict.keys())
         dense_points = data_dict['dense_point']
         points = data_dict['points'] 

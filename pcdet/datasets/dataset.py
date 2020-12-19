@@ -182,6 +182,6 @@ class DatasetTemplate(torch_data.Dataset):
             except:
                 print('Error in collate_batch: key=%s' % key)
                 raise TypeError
-
+        #print('vis' in ret.keys())
         ret['batch_size'] = batch_size
         return ret

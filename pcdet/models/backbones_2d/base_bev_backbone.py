@@ -27,6 +27,7 @@ class BaseBEVBackbone(nn.Module):
         c_in_list = [input_channels, *num_filters[:-1]]
         self.blocks = nn.ModuleList()
         self.deblocks = nn.ModuleList()
+        """
         self.conv_pillar = nn.Conv2d(64,1,kernel_size=(3,3),stride=(1,1),padding=(0,0),bias=False)
         self.conv_visi = nn.Conv2d(40,64,kernel_size=(3,3),stride=(1,1),padding=(0,0),bias=False)
         self.conv_visi_2 = nn.Conv2d(64,1,kernel_size=(3,3),stride=(1,1),padding=(0,0),bias=False)
@@ -34,6 +35,7 @@ class BaseBEVBackbone(nn.Module):
         self.relu = nn.ReLU()
         self.zp = nn.ZeroPad2d(1)
         self.softmax = nn.Softmax(dim=-1)
+        """
         for idx in range(num_levels):
             cur_layers = [
                 nn.ZeroPad2d(1),
@@ -93,24 +95,28 @@ class BaseBEVBackbone(nn.Module):
         Returns:
         """
         spatial_features = data_dict['spatial_features']
-        #print(spatial_features.size())
+        #print( 'vis' in data_dict.keys())
         #sys.exit()
-        visibility = data_dict['visibility'].to(torch.float32).permute(0,3,1,2) # 2, 40, 512, 512
-        print(visibility.size())
-        print(spatial_features.size())
+        """
+        visibility = data_dict['vis']
+        visibility = visibility.to(torch.float32).permute(0,3,1,2) # 2, 40, 512, 512
+        #print(visibility.size())
+        #print(spatial_features.size())
         re_f = self.zp(spatial_features)
         
         re_f = self.conv_pillar(re_f)
         
         visibility = self.zp(visibility)
         visibility = self.relu(self.conv_visi(visibility))
+        visibility = self.zp(visibility)
         re_v = self.conv_visi_2(visibility)
 
-        re_f = self.conv_pillar(batch_spatial_features)
+        #re_f = self.conv_pillar(batch_spatial_features)
         attention = self.softmax(torch.cat([re_v,re_f],dim=1))
-        re_v = attention[:,0,:,:]*re_v
-        re_f = attention[:,1,:,:]*re_f
+        re_v = attention[:,0,:,:].unsqueeze(1).repeat(1,64,1,1)*re_v
+        re_f = attention[:,1,:,:].unsqueeze(1).repeat(1,64,1,1)*re_f
         spatial_features = re_v+re_f
+        """
         ups = []
         ret_dict = {}
         x = spatial_features
