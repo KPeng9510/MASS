@@ -101,7 +101,7 @@ class NuScenesDataset(DatasetTemplate):
 
         cur_times = sweep_info['time_lag'] * np.ones((1, points_sweep.shape[1]))
         return points_sweep.T, cur_times.T
-
+"""
     def get_lidar_with_sweeps(self, index, max_sweeps=1):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
@@ -138,6 +138,56 @@ class NuScenesDataset(DatasetTemplate):
         #print(points[:,5])
         #sys.exit()
         return points, dense_point
+"""
+
+    def get_lidar_with_sweeps(self, index, max_sweeps=1):
+        info = self.infos[index]
+        lidar_path = self.root_path / info['lidar_path']
+        points = np.fromfile(str(lidar_path), dtype=np.float32, count=-1).reshape([-1, 6])[:, :6]
+        dense_path = self.root_path/'dense'/(info['lidar_path'].split('/')[2])
+        #print(dense_path)
+        #sys.exit()
+        dense_point = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1,6])[:,:6]
+
+        #points = np.concatenate((points[:,:4],np.expand_dims(points[:,5],axis=-1)),axis=-1)
+        #np.set_printoptions(threshold=np.inf)
+        #print((points[:,5]!=0) & (points[:,5]!=11))
+        #sys.exit()
+        #semantic_labels=points[:,5]
+        #points = points[:,:]
+        sweep_points_list = [points]
+        sweep_times_list = [np.zeros((points.shape[0], 1))]
+        #print(2)
+        sweep_points_list_sp = [points[:,:4]]
+        sweep_times_list_sp = [np.zeros((points.shape[0], 1))]
+        sweep_origin_list = [[[0.0,0.0,0.0]]]
+        max_sweeps=10
+        #print(info['sweeps'])
+        for k in np.random.choice(len(info['sweeps']), max_sweeps - 1, replace=False):
+            #print(k)
+            points_sweep, times_sweep,sweep_origins = self.get_sweep(info['sweeps'][k])
+            sweep_points_list_sp.append(points_sweep)
+            sweep_times_list_sp.append(times_sweep)
+            
+            sweep_origin_list.append([sweep_origins[:3]])
+        #sys.exit()
+        #print(sweep_origin_list)
+        points = np.concatenate(sweep_points_list, axis=0)
+        times = np.concatenate(sweep_times_list,-1).astype(points.dtype)
+        dense_point = np.concatenate((dense_point, times), axis=1)
+
+        origins = np.concatenate(sweep_origin_list, axis=0)
+        #print(origins)
+        #sys.exit()
+        indices = np.cumsum([0] + [len(pts) for pts in sweep_points_list_sp]).astype(int)
+        
+        points_sp = np.concatenate(sweep_points_list_sp, axis=0)
+        times_sp = np.concatenate(sweep_times_list_sp, axis=0).astype(points.dtype)
+        points = np.concatenate((points, times), axis=1)
+        points_sp = np.concatenate((points_sp, times_sp), axis=1)
+        #print(points[:,5])
+        #sys.exit()
+        return points, points_sp,origins,indices, dense_point
 
     def __len__(self):
         if self._merge_all_iters_to_one_epoch:
@@ -155,6 +205,9 @@ class NuScenesDataset(DatasetTemplate):
         input_dict = {
             'points': points,
             'dense_point': dense_point,
+            'indices': indices,
+            'points_sp': points_sp,
+            'origins' : origins,
             'frame_id': Path(info['lidar_path']).stem,
             'metadata': {'token': info['token']}
         }
