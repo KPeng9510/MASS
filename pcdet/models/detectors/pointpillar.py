@@ -171,10 +171,17 @@ class PointPillar(Detector3DTemplate):
                 #sys.exit()
 
                 #targets = batch_dict['one_hot']
-                #tar = torch.argmax(batch_dict['one_hot'],dim=1)
-                #pred = torch.argmax(pred_seg, dim=1)
+                tar = torch.argmax(batch_dict['one_hot'],dim=1)
+                tar_crr = torch.argmax(targets_crr, dim=1)
+                mask = tar_crr == 0
+                
+
+
+
+                pred = torch.argmax(pred_seg, dim=1)
+                
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                targets = targets_crr
+                #targets = targets_crr
                 target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
                 
@@ -192,7 +199,7 @@ class PointPillar(Detector3DTemplate):
         """
         #pred_dict,_=self.post_processing(batch_dict)
         
-        pred_boxs = pred_dict
+        #pred_boxs = pred_dict
         #positive_mask = pred_cls >= 1
         #print(pred_cls.size())
         #print(pred_boxs[0]["pred_boxes"].size())
