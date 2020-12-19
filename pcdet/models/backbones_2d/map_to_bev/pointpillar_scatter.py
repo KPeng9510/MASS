@@ -33,7 +33,7 @@ class PointPillarScatter(nn.Module):
         pillar_seg = batch_dict["pillar_seg_gt"]
         dense_seg = batch_dict["pillar_dense_gt"]
         dense_coor = batch_dict["dense_pillar_coords"]
-        points_mean = batch_dict["points_mean"].squeeze(1)
+        points_mean = batch_dict["points_mean"].squeeze()
         pillar_features = torch.cat([pillar_features, pillar_seg,points_mean],dim=-1)
         batch_spatial_features = []
         batch_size = coords[:, 0].max().int().item() + 1

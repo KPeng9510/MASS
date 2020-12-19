@@ -48,10 +48,11 @@ class PointPillar(Detector3DTemplate):
                 """
                 #print(batch_dict.keys())
                 #sys.exit()
-                points_mean = batch_dict["pointsmean"]
+                points_mean = batch_dict["points_coor"]
                 #print(points_mean.size())
                 gt_boxes = batch_dict["gt_boxes"]
-                batch,c,h,w = points_mean.size()
+                #batch,c,h,w = points_mean.size()
+                batch,c,h,w=2,3,512,512
                 dict_seg = []
                 dict_cls_num = []
                 label_b = batch_dict["labels_seg"]
@@ -59,7 +60,10 @@ class PointPillar(Detector3DTemplate):
                 
                 for i in range(gt_boxes.size()[0]):
                     #os.environ['CUDA_LAUNCH_BLOCKING'] = "1" 
-                    points = points_mean[i,:,:,:].resize(c,h*w).permute(1,0)
+                    #print(points_mean.size())
+                    points = points_mean
+                    #print(points[:100,:])
+                    #sys.exit()
                     box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
                     points[:, 0:3].unsqueeze(dim=0).float().cuda(),
                     gt_boxes[i,:, 0:7].unsqueeze(dim=0).float().cuda()
@@ -88,6 +92,7 @@ class PointPillar(Detector3DTemplate):
                     label[nonzero_mask] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask]
                     nonzero_mask_2 = gt_boxes_indx[box_idxs_of_pts.long()] != 0
                     label[nonzero_mask_2] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2]
+                    #print(gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2])
                     #print(label)
                     #sys.exit()
                     #print(target_cr)
@@ -113,7 +118,9 @@ class PointPillar(Detector3DTemplate):
                     #target_cr = torch.cat([target_cr, target_cr, target_cr], dim=-1)
                     #print(target_cr.size())
                     #im = Image.fromarray((target_cr.int().cpu().numpy()*10), 'RGB')
-                    #im.save("/mrtstorage/users/kpeng/target.png")
+                    #f=open("/mrtstorage/users/kpeng/label.bin",'wb')
+                    #f.write(label.view(h,w).cpu().numpy().astype(np.float32).tobytes())
+                    #f.close()
                     #sys.exit()
                     target_label = torch.zeros([1,1,h,16], dtype=target_cr.dtype, device = target_cr.device)
                     for i in range(16):
@@ -156,19 +163,51 @@ class PointPillar(Detector3DTemplate):
                 #print(batch_dict["spatial_features"].size())
                 spatial_features = batch_dict["spatial_features_2d"]
                 pred_seg = self.segmentation_head(spatial_features)
-                targets = batch_dict['one_hot']
+                #print(pred_seg.size())
+                label = (np.argmax(pred_seg[0].cpu().numpy(), axis=0)).astype(np.float32).tobytes()
+                f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
+                f.write(label)
+                f.close()
+                #sys.exit()
+
+                #targets = batch_dict['one_hot']
+                #tar = torch.argmax(batch_dict['one_hot'],dim=1)
+                #pred = torch.argmax(pred_seg, dim=1)
+                #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
+                targets = targets_crr
+                target = torch.argmax(targets, dim=1) #from 0 to 15
+                nozero_mask = target != 0
                 
-                targets = (targets.bool() | targets_crr.bool()).to(torch.float32)                #sys.exit()
+                target = one_hot((target[nozero_mask]-1).unsqueeze(-1).unsqueeze(0).unsqueeze(0), 15)
+                #print(pred_seg.size())
+                pred = torch.argmax(pred_seg, dim=1)
+                pred = one_hot((pred[nozero_mask]).unsqueeze(-1).unsqueeze(0).unsqueeze(0),15)
+                #sys.exit()
                 #print(pred_seg.size())
                 #print(targets.size())
                 
-                loss_seg = F.binary_cross_entropy_with_logits(pred_seg,targets,reduction='mean')
-                #print(loss_seg)
-                #sys.exit()
-            
+                loss_seg = F.binary_cross_entropy_with_logits(pred,target,reduction='mean')
+        """
+           code for geomertic consistency
+        """
+        #pred_dict,_=self.post_processing(batch_dict)
+        
+        pred_boxs = pred_dict
+        #positive_mask = pred_cls >= 1
+        #print(pred_cls.size())
+        #print(pred_boxs[0]["pred_boxes"].size())
+        #print(pred_labels[0]["pred_labels"].size())
+        #print(positive_mask.size())
+        #p_box = pred_boxs[positive_mask]
+        #pred_boxes = batch_dict[car_mask]
+        #print(p_box)
+        #sys.exit()
+        #pred_dict,_=self.post_processing(batch_dict)
+        #print(batch_dict.keys())
         if self.training:
             loss, tb_dict, disp_dict = self.get_training_loss()
-
+            #pred_boxes = batch_dict["batch_box_preds"]
+            
             ret_dict = {
                 'loss': loss + 0.8*loss_seg
             }

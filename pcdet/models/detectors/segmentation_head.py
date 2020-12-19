@@ -23,7 +23,7 @@ class FCNMaskHead(nn.Module):
                  conv_out_channels=384,
                  upsample_method='deconv',
                  upsample_ratio=4,
-                 num_classes=16,
+                 num_classes=15,
                  class_agnostic=False,
                  normalize=None):
         super(FCNMaskHead, self).__init__()

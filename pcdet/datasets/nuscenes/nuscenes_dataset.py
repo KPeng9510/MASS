@@ -106,6 +106,8 @@ class NuScenesDataset(DatasetTemplate):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
         dense_path = self.root_path/'dense'/(info['lidar_path'].split('/')[2])
+        #print(dense_path)
+        #sys.exit()
         dense_point = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1,6])[:,:6]
         np.set_printoptions(threshold=np.inf)
         #print(dense_point[:,-1])

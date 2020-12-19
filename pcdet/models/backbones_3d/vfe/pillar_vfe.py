@@ -183,16 +183,29 @@ class PillarVFE(VFETemplate):
         points_mean = voxel_features[:, :, :3].sum(dim=1, keepdim=True) / voxel_num_points.type_as(voxel_features).view(-1, 1, 1)
         f_cluster = voxel_features[:, :, :3] - points_mean
 
-        f_center = torch.zeros_like(voxel_features[:, :, :3])
+        f_center = torch.zeros_like(voxel_features[:,: , :3])
+        center = torch.zeros_like(voxel_features[:,1,:3]).view(voxel_features.size()[0],1,3)
+        coor = torch.zeros([3,512,512], dtype=f_center.dtype, device=f_center.device)
+        x = torch.linspace(0,512,512) #*self.voxel_x + self.x_offset
+        z = torch.linspace(0,1,1)
+        y = torch.linspace(0,512,512)
+        grid_x,grid_y,grid_z = torch.meshgrid(x,y,z)
+        coor = torch.cat([(grid_x*self.voxel_x + self.x_offset).unsqueeze(-1), (grid_y*self.voxel_y + self.y_offset).unsqueeze(-1), (grid_z*self.voxel_z + self.z_offset).unsqueeze(-1)], dim=-1)
+        coor = coor.view(512*512,3)
+        center[:,:,0] = (coords[:, 3].to(voxel_features.dtype).unsqueeze(1) * self.voxel_x + self.x_offset)
+        center[:,:,1] = (coords[:, 2].to(voxel_features.dtype).unsqueeze(1) * self.voxel_y + self.y_offset)
+        center[:,:,2] = (coords[:, 1].to(voxel_features.dtype).unsqueeze(1) * self.voxel_z + self.z_offset)
         f_center[:, :, 0] = voxel_features[:, :, 0] - (coords[:, 3].to(voxel_features.dtype).unsqueeze(1) * self.voxel_x + self.x_offset)
         f_center[:, :, 1] = voxel_features[:, :, 1] - (coords[:, 2].to(voxel_features.dtype).unsqueeze(1) * self.voxel_y + self.y_offset)
         f_center[:, :, 2] = voxel_features[:, :, 2] - (coords[:, 1].to(voxel_features.dtype).unsqueeze(1) * self.voxel_z + self.z_offset)
-
+        
         if self.use_absolute_xyz:
             features = [voxel_features, f_cluster, f_center]
         else:
             features = [voxel_features[..., 3:], f_cluster, f_center]
-        batch_dict["points_mean"]=points_mean
+        batch_dict["points_mean"]=center
+
+        batch_dict["points_coor"]=coor
         if self.with_distance:
             points_dist = torch.norm(voxel_features[:, :, :3], 2, 2, keepdim=True)
             features.append(points_dist)
