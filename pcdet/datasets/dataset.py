@@ -158,7 +158,9 @@ class DatasetTemplate(torch_data.Dataset):
                 data_dict[key].append(val)
         batch_size = len(batch_list)
         ret = {}
-
+        data_dict.pop('points_sp', None)
+        data_dict.pop('indices', None)
+        data_dict.pop('origins', None)
         for key, val in data_dict.items():
             try:
                 if key in ['voxels', 'voxel_num_points', 'dense_pillar']:

@@ -164,10 +164,10 @@ class PointPillar(Detector3DTemplate):
                 spatial_features = batch_dict["spatial_features_2d"]
                 pred_seg = self.segmentation_head(spatial_features)
                 #print(pred_seg.size())
-                label = (np.argmax(pred_seg[0].cpu().numpy(), axis=0)).astype(np.float32).tobytes()
-                f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
-                f.write(label)
-                f.close()
+                #label = (np.argmax(pred_seg[0].cpu().numpy(), axis=0)).astype(np.float32).tobytes()
+                #f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
+                #f.write(label)
+                #f.close()
                 #sys.exit()
 
                 #targets = batch_dict['one_hot']

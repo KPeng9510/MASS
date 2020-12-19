@@ -10,7 +10,7 @@ from tqdm import tqdm
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
 from ...utils import common_utils
 from ..dataset import DatasetTemplate
-
+from mapping import mapping
 
 class NuScenesDataset(DatasetTemplate):
     def __init__(self, dataset_cfg, class_names, training=True, root_path=None, logger=None):
@@ -101,7 +101,7 @@ class NuScenesDataset(DatasetTemplate):
 
         cur_times = sweep_info['time_lag'] * np.ones((1, points_sweep.shape[1]))
         return points_sweep.T, cur_times.T
-"""
+    """
     def get_lidar_with_sweeps(self, index, max_sweeps=1):
         info = self.infos[index]
         lidar_path = self.root_path / info['lidar_path']
@@ -137,8 +137,8 @@ class NuScenesDataset(DatasetTemplate):
         dense_point = np.concatenate((dense_point, times), axis=1)
         #print(points[:,5])
         #sys.exit()
-        return points, dense_point
-"""
+        return points, dense_point 
+    """
 
     def get_lidar_with_sweeps(self, index, max_sweeps=1):
         info = self.infos[index]
@@ -161,7 +161,7 @@ class NuScenesDataset(DatasetTemplate):
         sweep_points_list_sp = [points[:,:4]]
         sweep_times_list_sp = [np.zeros((points.shape[0], 1))]
         sweep_origin_list = [[[0.0,0.0,0.0]]]
-        max_sweeps=10
+        #max_sweeps=10
         #print(info['sweeps'])
         for k in np.random.choice(len(info['sweeps']), max_sweeps - 1, replace=False):
             #print(k)
@@ -174,7 +174,7 @@ class NuScenesDataset(DatasetTemplate):
         #print(sweep_origin_list)
         points = np.concatenate(sweep_points_list, axis=0)
         times = np.concatenate(sweep_times_list,-1).astype(points.dtype)
-        dense_point = np.concatenate((dense_point, times), axis=1)
+        #dense_point = np.concatenate((dense_point, times), axis=1)
 
         origins = np.concatenate(sweep_origin_list, axis=0)
         #print(origins)
@@ -200,7 +200,7 @@ class NuScenesDataset(DatasetTemplate):
             index = index % len(self.infos)
 
         info = copy.deepcopy(self.infos[index])
-        points, dense_point = self.get_lidar_with_sweeps(index, max_sweeps=self.dataset_cfg.MAX_SWEEPS)
+        points,points_sp, origins, indices, dense_point = self.get_lidar_with_sweeps(index, max_sweeps=self.dataset_cfg.MAX_SWEEPS)
 
         input_dict = {
             'points': points,
