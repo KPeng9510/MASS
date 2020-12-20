@@ -101,7 +101,7 @@ class PillarVFE(VFETemplate):
         #print(batch_dict["gt_names"].size())
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
-        dense_gt = batch_dict['dense_pillar'][:,:,-2]
+        dense_gt = batch_dict['dense_pillar'][:,:,-1]
         #print(dense_gt)
         #sys.exit()
         coor = batch_dict['dense_pillar_coords']

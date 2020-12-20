@@ -49,7 +49,6 @@ class PointPillar(Detector3DTemplate):
                 #print(batch_dict.keys())
                 #sys.exit()
                 points_mean = batch_dict["points_coor"]
-                
                 #print(points_mean.size())
                 gt_boxes = batch_dict["gt_boxes"]
                 #batch,c,h,w = points_mean.size()
@@ -63,17 +62,18 @@ class PointPillar(Detector3DTemplate):
                     #os.environ['CUDA_LAUNCH_BLOCKING'] = "1" 
                     #print(points_mean.size())
                     points = points_mean
+                    #print(points.size())
+                    #sys.exit()
                     #print(points[:100,:])
                     #sys.exit()
-                    #torch.cuda.set_device(0)
                     box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
-                    points[:, 0:3].unsqueeze(dim=0).float().cuda(),
-                    gt_boxes[i,:, 0:7].unsqueeze(dim=0).float().cuda(),
+                    points.unsqueeze(dim=0).float().cuda(),
+                    gt_boxes[i,:,:7].unsqueeze(dim=0).float().cuda()
                     ).long().squeeze(dim=0)
                     label = label_b[i].flatten()
                     gt_boxes_indx = gt_boxes[i,:,-1]
-                    print(box_idxs_of_pts.device)
                     #print(label)
+                    #sys.exit()
                     """
                     if i == 1:
                         sys.exit()
@@ -87,14 +87,7 @@ class PointPillar(Detector3DTemplate):
                     #if i == 1:
                     #    sys.exit()
                     #gt_boxes_indx = gt_boxes_indx[:nonzero_number.int()]
-                    #zero = torch.zeros([1,1], device=gt_boxes_indx.device)
-                    #print(gt_boxes_indx.size()[0]+1)
-                    s=gt_boxes_indx.size()[0]+1
-                    gt_b = torch.zeros([s],device=gt_boxes_indx.device)
-                    gt_b[1:] += gt_boxes_indx
-                    gt_boxes_indx = gt_b
-                    #sys.exit()
-                    #gt_boxes_indx = torch.cat([zero,gt_boxes_indx],dim=0)
+                    gt_boxes_indx = torch.cat([torch.Tensor([0]).cuda(),gt_boxes_indx],dim=0)
                     box_idxs_of_pts +=1
                     #print(gt_boxes_indx)
                     # = target_cr != 0
@@ -124,7 +117,9 @@ class PointPillar(Detector3DTemplate):
                     #print(limit)
                     
                     #print(target_cr.size())
-                    target_cr = label.view(1,1,h,w)
+                    target_cr = label.view(1,1,512,512)
+                    #print(torch.max(target_cr)[0])
+                    #sys.exit()
                     #target_cr = torch.cat([target_cr, target_cr, target_cr], dim=-1)
                     #print(target_cr.size())
                     #im = Image.fromarray((target_cr.int().cpu().numpy()*10), 'RGB')
@@ -132,12 +127,12 @@ class PointPillar(Detector3DTemplate):
                     #f.write(label.view(h,w).cpu().numpy().astype(np.float32).tobytes())
                     #f.close()
                     #sys.exit()
-                    target_label = torch.zeros([1,1,h,16], dtype=target_cr.dtype, device = target_cr.device)
-                    for i in range(16):
-                        target_label[:,:,:,i] = i
-                    target_cr = torch.cat([target_cr,target_label],dim=-1)
-                    box_idxs_pillar = one_hot(target_cr.to(torch.int64), 16)
-                    box_idxs_pillar = box_idxs_pillar[:,:,:,:w]
+                    #target_label = torch.zeros([1,1,h,16], dtype=target_cr.dtype, device = target_cr.device)
+                    #for i in range(16):
+                    #    target_label[:,:,:,i] = i
+                    #target_cr = torch.cat([target_cr,target_label],dim=-1)
+                    #box_idxs_pillar = one_hot(target_cr.to(torch.int64), 16)
+                    #box_idxs_pillar = box_idxs_pillar[:,:,:,:w]
                     #driveable_area = torch.zeros([1,1,h,w],dtype=box_idxs_pillar.dtype, device=box_idxs_pillar.device)
                     #box_idxs_pillar = torch.cat([box_idxs_pillar[:,:limit.int()-1,:,:],driveable_area,box_idxs_pillar[:,-1,:,:].unsqueeze(1)],dim=1)
                     """
@@ -153,11 +148,11 @@ class PointPillar(Detector3DTemplate):
                     #print(gt_boxes.size()[1])
                     
                     """
-                    dict_seg.append(box_idxs_pillar)
+                    dict_seg.append(target_cr)
                     #print(dict_seg[0].size())
                     #sys.exit()
                     #print(box_idxs_pillar.dtype)
-                    dict_cls_num.append(limit.to(torch.int64))
+                    #dict_cls_num.append(limit.to(torch.int64))
                     #print(gt_boxes.size())
 
                 """
@@ -182,23 +177,17 @@ class PointPillar(Detector3DTemplate):
 
                 #targets = batch_dict['one_hot']
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
-                #tar_crr = torch.argmax(targets_crr, dim=1)
-                #mask = tar_crr == 0
-                
-
-
-
-                pred = torch.argmax(pred_seg, dim=1)
-                
+                #pred = torch.argmax(pred_seg, dim=1)
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
                 targets = targets_crr
-                target = torch.argmax(targets, dim=1) #from 0 to 15
+                target = targets
+                #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
                 
-                target = one_hot((target[nozero_mask]-1).unsqueeze(-1).unsqueeze(0).unsqueeze(0), 15)
+                target = one_hot((target[nozero_mask]-1).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0), 15)
                 #print(pred_seg.size())
-                pred = torch.argmax(pred_seg, dim=1)
-                pred = one_hot((pred[nozero_mask]).unsqueeze(-1).unsqueeze(0).unsqueeze(0),15)
+                pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
+                pred = one_hot((pred[nozero_mask]).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0),15)
                 #sys.exit()
                 #print(pred_seg.size())
                 #print(targets.size())
