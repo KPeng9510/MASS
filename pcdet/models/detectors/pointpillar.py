@@ -88,7 +88,7 @@ class PointPillar(Detector3DTemplate):
                     #    sys.exit()
                     #gt_boxes_indx = gt_boxes_indx[:nonzero_number.int()]
                     gt_boxes_indx = torch.cat([torch.Tensor([0]).cuda(),gt_boxes_indx],dim=0)
-                    box_idxs_of_pts = box_idxs_of_pts+1
+                    box_idxs_of_pts +=1
                     #print(gt_boxes_indx)
                     # = target_cr != 0
                     nonzero_mask = (label ==0)
@@ -215,7 +215,7 @@ class PointPillar(Detector3DTemplate):
             #pred_boxes = batch_dict["batch_box_preds"]
             
             ret_dict = {
-                'loss': loss + 0.8*loss_seg
+                'loss': loss + loss_seg
             }
             return ret_dict, tb_dict, disp_dict
         else:
