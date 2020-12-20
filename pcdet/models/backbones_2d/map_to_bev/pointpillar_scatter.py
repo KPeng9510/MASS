@@ -30,7 +30,7 @@ class PointPillarScatter(nn.Module):
         self.conv_pillar = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=1,bias=False)
         self.conv_visi = nn.Conv2d(40,64,kernel_size=3,stride=1,padding=1,bias=False)
         self.conv_visi_2 = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=1,bias=False)
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(inplace=False)
         self.zp = nn.ZeroPad2d(1)
         self.softmax = nn.Softmax(dim=-1)
         assert self.nz == 1
@@ -126,8 +126,10 @@ class PointPillarScatter(nn.Module):
         
         re_f = self.conv_pillar(batch_spatial_features)
         attention = self.softmax(torch.cat([re_v,re_f],dim=1))
-        re_v = attention[:,0,:,:].unsqueeze(1).repeat(1,64,1,1)*re_v
-        re_f = attention[:,1,:,:].unsqueeze(1).repeat(1,64,1,1)*re_f
+        att1 = attention[:,0,:,:]
+        att2 = attention[:,1,:,:]
+        re_v = att1.unsqueeze(1).repeat(1,64,1,1)*re_v
+        re_f = att2.unsqueeze(1).repeat(1,64,1,1)*re_f
         batch_spatial_features = re_v+re_f
         batch_dict['spatial_features'] = batch_spatial_features
         #batch_dict['one_hot']=onehot_labels
