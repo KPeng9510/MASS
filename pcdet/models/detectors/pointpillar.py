@@ -179,11 +179,11 @@ class PointPillar(Detector3DTemplate):
                 
                 #print(pred_seg.size())
                 #sys.exit()
-                #label = (np.argmax(pred_seg[0].cpu().numpy(), axis=0)).astype(np.float32).tobytes()
-                #f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
-                #f.write(label)
-                #f.close()
-                #sys.exit()
+                label = (np.argmax(pred_seg[0].cpu().numpy(), axis=0)).astype(np.float32).tobytes()
+                f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
+                f.write(label)
+                f.close()
+                sys.exit()
 
                 #targets = batch_dict['one_hot']
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
@@ -194,13 +194,14 @@ class PointPillar(Detector3DTemplate):
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
                 
-                target = one_hot_1d((target[nozero_mask]-1).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0), 15)
+                target = one_hot_1d((target[nozero_mask]-1).long(), 15)
                 #print(pred_seg.size())
                 pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
-                pred = one_hot_1d((pred[nozero_mask]).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0),15)
+                pred = one_hot_1d((pred[nozero_mask]).long(),15)
                 #sys.exit()
                 #print(pred_seg.size())
-                #print(targets.size())
+                print(pred.size())
+                sys.exit()
                 
                 loss_seg = F.binary_cross_entropy_with_logits(pred,target,reduction='mean')
         """
