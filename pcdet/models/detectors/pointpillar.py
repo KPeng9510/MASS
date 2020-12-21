@@ -178,7 +178,7 @@ class PointPillar(Detector3DTemplate):
                 #print(batch_dict["spatial_features_2d"].size())
                 #print(batch_dict["spatial_features"].size())
                 spatial_features = batch_dict["spatial_features"]
-                pred_seg = self.segmentation_head(spatial_features)
+                pred = self.segmentation_head(spatial_features)
                 
                 #print(pred_seg.size())
                 #sys.exit()
@@ -199,18 +199,18 @@ class PointPillar(Detector3DTemplate):
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
                 #print(target[nozero_mask])
-                target = one_hot_1d((target[nozero_mask]-1).long(), 15)
+                target = one_hot_1d((target[nozero_mask]-1).long(), 15).permute(0,2,1)
                 #print(target[:,-100:].size())
-                pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
+                #pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
                 #print(target[nozero_mask])
                 #sys.exit()
-                pred = one_hot_1d((pred[nozero_mask]).long(),15)
+                #pred = one_hot_1d((pred[nozero_mask]).long(),15)
                 #sys.exit()
                 #print(pred_seg.size())
                 #print(target.size())
                 #sys.exit()
-                
-                loss_seg = F.binary_cross_entropy_with_logits(pred.unsqueeze(0),target.unsqueeze(0),reduction='mean')
+                pred = pred.permute(0,2,3,1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
+                loss_seg = F.binary_cross_entropy_with_logits(pred,target,reduction='mean')
                 #print(loss_seg)
                 #sys.exit()
         """
