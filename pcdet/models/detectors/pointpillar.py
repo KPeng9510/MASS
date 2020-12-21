@@ -180,12 +180,12 @@ class PointPillar(Detector3DTemplate):
                 spatial_features = batch_dict["spatial_features"]
                 pred = self.segmentation_head(spatial_features)
                 
-                #print(pred_seg.size())
+                #print(pred.size())
                 #sys.exit()
                 #print(targets_crr[0])
                 
-                #label = (targets_crr[0].cpu().numpy()).astype(np.float32).tobytes()
-                #f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
+                #label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
+                #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
                 #f.write(label)
                 #f.close()
                 #sys.exit()
