@@ -1,4 +1,5 @@
 from .detector3d_template import Detector3DTemplate
+from .unet.unet import UNet
 from .segmentation_head import FCNMaskHead
 import sys
 from .erfnet import Net
@@ -25,20 +26,27 @@ def one_hot(labels, num_classes):
     one_hot = torch.cuda.FloatTensor(labels.size()[0], num_classes, labels.size()[2], labels.size()[3]).zero_()
     target = one_hot.scatter_(1, labels.data, 1) 
     return target
+def one_hot_1d(data, num_classes):
+     n_values = num_classes + 1
+     n_values = torch.eye(n_values)[data]
+     return n_values
 
 class PointPillar(Detector3DTemplate):
     def __init__(self, model_cfg, num_class, dataset):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
-        self.segmentation_head = FCNMaskHead()
+        #self.segmentation_head = FCNMaskHead()
+        self.segmentation_head = UNet(64,15)
     def forward(self, batch_dict):
         module_index = 0
         #print(batch_dict.keys())
         #sys.exit()
+        
         for cur_module in self.module_list:
             module_index += 1
             batch_dict = cur_module(batch_dict)
             #print(batch_dict.keys())
+            #torch.cuda.empty_cache()
             #points_mean = batch_dict['pointsmean']
             #batch_size,h,w = points_mean.size()
             #print(batch_dict["gt_boxes"][0,:,-1])
@@ -166,9 +174,11 @@ class PointPillar(Detector3DTemplate):
                 #print(batch_dict.keys())
                 #print(batch_dict["spatial_features_2d"].size())
                 #print(batch_dict["spatial_features"].size())
-                spatial_features = batch_dict["spatial_features_2d"]
+                spatial_features = batch_dict["spatial_features"]
                 pred_seg = self.segmentation_head(spatial_features)
+                
                 #print(pred_seg.size())
+                #sys.exit()
                 #label = (np.argmax(pred_seg[0].cpu().numpy(), axis=0)).astype(np.float32).tobytes()
                 #f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
                 #f.write(label)
@@ -184,10 +194,10 @@ class PointPillar(Detector3DTemplate):
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
                 
-                target = one_hot((target[nozero_mask]-1).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0), 15)
+                target = one_hot_1d((target[nozero_mask]-1).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0), 15)
                 #print(pred_seg.size())
                 pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
-                pred = one_hot((pred[nozero_mask]).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0),15)
+                pred = one_hot_1d((pred[nozero_mask]).long().unsqueeze(-1).unsqueeze(0).unsqueeze(0),15)
                 #sys.exit()
                 #print(pred_seg.size())
                 #print(targets.size())
@@ -215,7 +225,7 @@ class PointPillar(Detector3DTemplate):
             #pred_boxes = batch_dict["batch_box_preds"]
             
             ret_dict = {
-                'loss': loss + 100*loss_seg
+                'loss': loss + loss_seg
             }
             return ret_dict, tb_dict, disp_dict
         else:

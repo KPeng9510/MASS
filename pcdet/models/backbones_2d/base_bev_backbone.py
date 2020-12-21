@@ -127,9 +127,12 @@ class BaseBEVBackbone(nn.Module):
             ret_dict['spatial_features_%dx' % stride] = x
             if len(self.deblocks) > 0:
                 ups.append(self.deblocks[i](x))
+                #if i == 0:
+                #    print(x.size())
+                #    sys.exit()
             else:
                 ups.append(x)
-
+        
         if len(ups) > 1:
             x = torch.cat(ups, dim=1)
         elif len(ups) == 1:
