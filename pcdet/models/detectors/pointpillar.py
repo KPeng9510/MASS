@@ -27,7 +27,7 @@ def one_hot(labels, num_classes):
     target = one_hot.scatter_(1, labels.data, 1) 
     return target
 def one_hot_1d(data, num_classes):
-     n_values = num_classes + 1
+     n_values = num_classes
      n_values = torch.eye(n_values)[data]
      return n_values
 
@@ -97,10 +97,11 @@ class PointPillar(Detector3DTemplate):
                     #gt_boxes_indx = gt_boxes_indx[:nonzero_number.int()]
                     gt_boxes_indx = torch.cat([torch.Tensor([0]).cuda(),gt_boxes_indx],dim=0)
                     box_idxs_of_pts +=1
-                    #print(gt_boxes_indx)
+                    #print(box_idxs_of_pts)
+                    #sys.exit()
                     # = target_cr != 0
-                    nonzero_mask = (label ==0)
-                    label[nonzero_mask] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask]
+                    #nonzero_mask = (label ==0)
+                    #label[nonzero_mask] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask]
                     nonzero_mask_2 = gt_boxes_indx[box_idxs_of_pts.long()] != 0
                     label[nonzero_mask_2] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2]
                     #print(gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2])
@@ -117,15 +118,15 @@ class PointPillar(Detector3DTemplate):
                     #box_idxs_of_pts[mask] = -1
                     #box_idxs_of_pts += 1
                     #print(target_cr)
-                    target_cr = label
-                    limit = torch.max(target_cr)
+                    #target_cr = label
+                    #limit = torch.max(target_cr)
                     
                     #sys.exit()
                     #print(limit)
                     #print(limit)
                     
                     #print(target_cr.size())
-                    target_cr = label.view(1,1,512,512)
+                    target_cr = label
                     #print(torch.max(target_cr)[0])
                     #sys.exit()
                     #target_cr = torch.cat([target_cr, target_cr, target_cr], dim=-1)
@@ -156,7 +157,7 @@ class PointPillar(Detector3DTemplate):
                     #print(gt_boxes.size()[1])
                     
                     """
-                    dict_seg.append(target_cr)
+                    dict_seg.append(target_cr.unsqueeze(0))
                     #print(dict_seg[0].size())
                     #sys.exit()
                     #print(box_idxs_pillar.dtype)
@@ -169,7 +170,9 @@ class PointPillar(Detector3DTemplate):
                 #print(dict_seg[0].size())
                 #im = Image.fromarray(dict_seg[0].view([512,512,1]).cpu().numpy()*10)
                 #im.save("/mrtstorage/users/kpeng/target.jpg")
+                #print(dict_seg[0])
                 targets_crr = torch.cat(dict_seg,dim=0)
+                #print(targets_crr[0])
                 #sys.exit()
                 #print(batch_dict.keys())
                 #print(batch_dict["spatial_features_2d"].size())
@@ -179,31 +182,37 @@ class PointPillar(Detector3DTemplate):
                 
                 #print(pred_seg.size())
                 #sys.exit()
-                label = (np.argmax(pred_seg[0].cpu().numpy(), axis=0)).astype(np.float32).tobytes()
-                f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
-                f.write(label)
-                f.close()
-                sys.exit()
+                #print(targets_crr[0])
+                
+                #label = (targets_crr[0].cpu().numpy()).astype(np.float32).tobytes()
+                #f=open("/mrtstorage/users/kpeng/labels.bin",'wb')
+                #f.write(label)
+                #f.close()
+                #sys.exit()
 
                 #targets = batch_dict['one_hot']
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
                 #pred = torch.argmax(pred_seg, dim=1)
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                targets = targets_crr
-                target = targets
+                target = targets_crr.contiguous().view(2,1,512,512)
+                
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
-                
+                #print(target[nozero_mask])
                 target = one_hot_1d((target[nozero_mask]-1).long(), 15)
-                #print(pred_seg.size())
+                #print(target[:,-100:].size())
                 pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
+                #print(target[nozero_mask])
+                #sys.exit()
                 pred = one_hot_1d((pred[nozero_mask]).long(),15)
                 #sys.exit()
                 #print(pred_seg.size())
-                #print(pred.size())
+                #print(target.size())
                 #sys.exit()
                 
-                loss_seg = F.binary_cross_entropy_with_logits(pred,target,reduction='mean')
+                loss_seg = F.binary_cross_entropy_with_logits(pred.unsqueeze(0),target.unsqueeze(0),reduction='mean')
+                #print(loss_seg)
+                #sys.exit()
         """
            code for geomertic consistency
         """
@@ -226,7 +235,7 @@ class PointPillar(Detector3DTemplate):
             #pred_boxes = batch_dict["batch_box_preds"]
             
             ret_dict = {
-                'loss': loss + loss_seg
+                'loss': loss + 1.2*loss_seg
             }
             return ret_dict, tb_dict, disp_dict
         else:
