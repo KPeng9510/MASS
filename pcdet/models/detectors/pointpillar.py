@@ -199,7 +199,7 @@ class PointPillar(Detector3DTemplate):
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
                 #print(target[nozero_mask])
-                target = one_hot_1d((target[nozero_mask]-1).long(), 15).permute(0,2,1)
+                target = one_hot_1d((target[nozero_mask]-1).long(), 15).unsqueeze(0).permute(0,2,1).cuda()
                 #print(target[:,-100:].size())
                 #pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
                 #print(target[nozero_mask])
@@ -209,7 +209,7 @@ class PointPillar(Detector3DTemplate):
                 #print(pred_seg.size())
                 #print(target.size())
                 #sys.exit()
-                pred = pred.permute(0,2,3,1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
+                pred = pred.permute(0,2,3,1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
                 loss_seg = F.binary_cross_entropy_with_logits(pred,target,reduction='mean')
                 #print(loss_seg)
                 #sys.exit()
