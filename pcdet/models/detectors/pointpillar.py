@@ -200,8 +200,8 @@ class PointPillar(Detector3DTemplate):
                 pred = one_hot_1d((pred[nozero_mask]).long(),15)
                 #sys.exit()
                 #print(pred_seg.size())
-                print(pred.size())
-                sys.exit()
+                #print(pred.size())
+                #sys.exit()
                 
                 loss_seg = F.binary_cross_entropy_with_logits(pred,target,reduction='mean')
         """
