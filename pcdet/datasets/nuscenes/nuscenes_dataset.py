@@ -401,7 +401,7 @@ class NuScenesDatasetD6(NuScenesDataset):
         if len(self.infos) > 28000:
             self.infos = list(
                 sorted(self.infos, key=lambda e: e["timestamp"]))
-            self.infos = self.infos[::6]
+            self.infos = self.infos[::8]
 
 
 

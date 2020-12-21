@@ -40,7 +40,9 @@ class PointPillarScatter(nn.Module):
         pillar_seg = batch_dict["pillar_seg_gt"]
         dense_seg = batch_dict["pillar_dense_gt"]
         dense_coor = batch_dict["dense_pillar_coords"]
-        visibility = batch_dict['vis'].to(torch.float32).permute(0,3,1,2).contiguous() # 2, 40, 512, 512
+        #print(pillar_features.dtype)
+        #sys.exit()
+        visibility = batch_dict['vis'].to(torch.float32).contiguous().permute(0,3,1,2).contiguous() # 2, 40, 512, 512
         #print(visibility[0,2,:100,:100])
         #sys.exit()
         points_mean = batch_dict["points_mean"].squeeze()
@@ -88,14 +90,15 @@ class PointPillarScatter(nn.Module):
         """
            end
         """
+        torch.autograd.set_detect_anomaly(True)
         batch_spatial_features = torch.stack(batch_spatial_features, 0)
-        batch_spatial_dense = torch.stack(batch_spatial_dense, 0).view(batch_size, 1, 512,512)
+        batch_spatial_dense = torch.stack(batch_spatial_dense, 0).contiguous().view(batch_size, 1, 512,512)
         #print(batch_spatial_dense.size())
         #sys.exit()
         """
            merge
         """
-        batch_spatial_features = batch_spatial_features.view(batch_size, (self.num_bev_features+4) * self.nz, self.ny, self.nx)
+        batch_spatial_features = batch_spatial_features.contiguous().view(batch_size, (self.num_bev_features+4) * self.nz, self.ny, self.nx)
         batch_seg_labels = batch_spatial_features[:,-4,:,:].unsqueeze(1)
         
         zero_mask = batch_seg_labels == 0
@@ -116,15 +119,18 @@ class PointPillarScatter(nn.Module):
         #onehot_labels = onehot_labels[:,:,:,:512]
         batch_pointsmean = batch_spatial_features[:,64:,:,:]
         batch_dict['pointsmean'] = batch_pointsmean
-        
+        torch.autograd.set_detect_anomaly(True)
         batch_spatial_features = batch_spatial_features[:, :self.num_bev_features,:,:]
-        re_f = self.zp(batch_spatial_features)
-        re_f = self.conv_pillar(re_f)
-        #visibility = self.zp(visibility)
-        visibility = self.relu(self.conv_visi(visibility.float()))
-        re_v = self.conv_visi_2(visibility)
-        
+        #re_f = self.zp(batch_spatial_features)
         re_f = self.conv_pillar(batch_spatial_features)
+        #visibility = self.zp(visibility)
+        visibility = self.relu(self.conv_visi(visibility))
+        re_v = self.relu(self.conv_visi_2(visibility))
+        
+        #re_f = batch_spatial_features
+        #print(re_v.dtype)
+        #print(re_f.dtype)
+        #sys.exit()
         attention = self.softmax(torch.cat([re_v,re_f],dim=1))
         att1 = attention[:,0,:,:]
         att2 = attention[:,1,:,:]
