@@ -28,7 +28,7 @@ class NuScenesDataset(DatasetTemplate):
         nuscenes_infos = []
 
         for info_path in self.dataset_cfg.INFO_PATH[mode]:
-            info_path =  Path('/home/kpeng/pc14/OpenPCDet/data_seg/v1.0-trainval')/ info_path
+            info_path =  Path('/mrtstorage/users/kpeng/openpcdet/s/v1.0-trainval')/ info_path
             if not info_path.exists():
                 continue
             with open(info_path, 'rb') as f:
@@ -342,31 +342,32 @@ class NuScenesDataset(DatasetTemplate):
     def create_groundtruth_database(self, used_classes=None, max_sweeps=10):
         import torch
 
-        database_save_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s_1/v1.0-trainval/' + f'gt_database_{max_sweeps}sweeps_withvelo')
-        db_info_save_path = Path('/home/kpeng/pc14/OpenPCDet/data/v1.0-trainval/'+ f'nuscenes_dbinfos_{max_sweeps}sweeps_withvelo.pkl')
+        database_save_path = Path('/mrtstorage/users/kpeng/openpcdet/s/v1.0-trainval/' + f'gt_database_{max_sweeps}sweeps_withvelo')
+        db_info_save_path = Path('/mrtstorage/users/kpeng/openpcdet/s/v1.0-trainval/'+ f'nuscenes_dbinfos_{max_sweeps}sweeps_withvelo.pkl')
 
         database_save_path.mkdir(parents=True, exist_ok=True)
-        r_path = Path('/home/kpeng/pc14/OpenPCDet/data_seg/v1.0-trainval/')
+        r_path = Path('/home/kpeng/pc14/OpenPCDet/data_new/v1.0-trainval/')
         all_db_infos = {}
-        s_path = Path('/mrtstorage/users/kpeng/OpenPCDet/s_1_test')
+        s_path = Path('/mrtstorage/users/kpeng/openpcdet/s/')
         for idx in tqdm(range(len(self.infos))):
             sample_idx = idx
             info = self.infos[idx]
             #print(1)
-            points = self.get_lidar_with_sweeps(idx, max_sweeps=max_sweeps)
+            points = self.get_lidar_with_sweeps(idx, max_sweeps=max_sweeps)[0]
             gt_boxes = info['gt_boxes']
             gt_names = info['gt_names']
 
             
             #print(gt_boxes.shape)
             #sys.exit()
+            
             box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
                 torch.from_numpy(points[:, 0:3]).unsqueeze(dim=0).float().cuda(),
                 torch.from_numpy(gt_boxes[:, 0:7]).unsqueeze(dim=0).float().cuda()
             ).long().squeeze(dim=0).cpu().numpy()
-            np.set_printoptions(threshold=np.inf)
-            print(box_idxs_of_pts)
-            sys.exit()
+            #np.set_printoptions(threshold=np.inf)
+            #print(box_idxs_of_pts)
+            #sys.exit()
             for i in range(gt_boxes.shape[0]):
                 filename = '%s_%s_%d.bin' % (sample_idx, gt_names[i], i)
                 filepath = database_save_path / filename
@@ -468,7 +469,8 @@ if __name__ == '__main__':
         dataset_cfg = EasyDict(yaml.load(open(args.cfg_file)))
         ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
         dataset_cfg.VERSION = args.version
-        """create_nuscenes_info(
+        """
+        create_nuscenes_info(
             version=dataset_cfg.VERSION,
             data_path=ROOT_DIR / 'data_seg',
             save_path='/home/kpeng/pc14/OpenPCDet/' + 'data_seg/',
@@ -477,7 +479,7 @@ if __name__ == '__main__':
 
         nuscenes_dataset = NuScenesDataset(
             dataset_cfg=dataset_cfg, class_names=None,
-            root_path=ROOT_DIR / 'data_seg',
+            root_path=Path('/mrtstorage/users/kpeng/openpcdet/s/'),
             logger=common_utils.create_logger(), training=True
         )
         nuscenes_dataset.create_groundtruth_database(max_sweeps=dataset_cfg.MAX_SWEEPS)

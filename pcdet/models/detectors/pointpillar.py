@@ -171,30 +171,30 @@ class PointPillar(Detector3DTemplate):
                 #im = Image.fromarray(dict_seg[0].view([512,512,1]).cpu().numpy()*10)
                 #im.save("/mrtstorage/users/kpeng/target.jpg")
                 #print(dict_seg[0])
-                targets_crr = torch.cat(dict_seg,dim=0)
+                targets_crr = torch.cat(dict_seg,dim=0).view(2,1,512,512)[:,:,128:384,128:384]
                 #print(targets_crr[0])
                 #sys.exit()
                 #print(batch_dict.keys())
                 #print(batch_dict["spatial_features_2d"].size())
                 #print(batch_dict["spatial_features"].size())
-                spatial_features = batch_dict["spatial_features"]
+                spatial_features = batch_dict["spatial_features"][:,:,128:384,128:384]
                 pred = self.segmentation_head(spatial_features)
                 
                 #print(pred.size())
                 #sys.exit()
                 #print(targets_crr[0])
                 
-                label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
-                f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
-                f.write(label)
-                f.close()
-                sys.exit()
+                #label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
+                #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
+                #f.write(label)
+                #f.close()
+                #sys.exit()
 
                 #targets = batch_dict['one_hot']
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
                 #pred = torch.argmax(pred_seg, dim=1)
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                target = targets_crr.contiguous().view(2,1,512,512)
+                target = targets_crr.contiguous().view(2,1,256,256)
                 
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0

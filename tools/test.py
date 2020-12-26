@@ -148,7 +148,7 @@ def main():
         assert args.batch_size % total_gpus == 0, 'Batch size should match the number of gpus'
         args.batch_size = args.batch_size // total_gpus
 
-    output_dir = Path("/mrtstorage/users/kpeng/train_nuscence/21_12_2020/unet_d8_crr_last") / 'output_test' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    output_dir = Path("/mrtstorage/users/kpeng/train_nuscence/24_12_2020/unet_d8_crr_last_half") / 'output_test' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     output_dir.mkdir(parents=True, exist_ok=True)
 
     eval_output_dir = output_dir / 'eval'
