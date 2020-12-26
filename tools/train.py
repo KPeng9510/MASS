@@ -77,7 +77,7 @@ def main():
     if args.fix_random_seed:
         common_utils.set_random_seed(666)
 
-    output_dir = Path("/mrtstorage/users/kpeng/train_nuscence/24_12_2020") / 'unet_d8_crr_last_half' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    output_dir = Path("/mrtstorage/users/kpeng/train_nuscence/26_12_2020") / 'unetatt_d8_crr_last_half' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     ckpt_dir = output_dir / 'ckpt'
     output_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)

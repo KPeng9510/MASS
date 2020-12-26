@@ -122,12 +122,12 @@ class PointPillarScatter(nn.Module):
         torch.autograd.set_detect_anomaly(True)
         batch_spatial_features = batch_spatial_features[:, :self.num_bev_features,:,:]
         #re_f = self.zp(batch_spatial_features)
-        #re_f = self.conv_pillar(batch_spatial_features)
+        re_f = self.conv_pillar(batch_spatial_features)
         #visibility = self.zp(visibility)
         visibility = self.relu(self.conv_visi(visibility))
-        #re_v = self.relu(self.conv_visi_2(visibility))
-        re_v = visibility
-        re_f = batch_spatial_features
+        re_v = self.relu(self.conv_visi_2(visibility))
+        #re_v = visibility
+        #re_f = batch_spatial_features
         #print(re_v.dtype)
         #print(re_f.dtype)
         #sys.exit()
