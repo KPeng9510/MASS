@@ -131,11 +131,11 @@ class PointPillarScatter(nn.Module):
         #print(re_v.dtype)
         #print(re_f.dtype)
         #sys.exit()
-        #attention = self.softmax(torch.cat([re_v,re_f],dim=1))
-        #att1 = attention[:,0,:,:]
-        #att2 = attention[:,1,:,:]
-        #re_v = att1.unsqueeze(1).repeat(1,64,1,1).contiguous()*re_v
-        #re_f = att2.unsqueeze(1).repeat(1,64,1,1).contiguous()*re_f
+        attention = self.softmax(torch.cat([re_v,re_f],dim=1))
+        att1 = attention[:,0,:,:]
+        att2 = attention[:,1,:,:]
+        re_v = att1.unsqueeze(1).repeat(1,64,1,1).contiguous()*re_v
+        re_f = att2.unsqueeze(1).repeat(1,64,1,1).contiguous()*re_f
         batch_spatial_features = re_v+re_f
         batch_dict['spatial_features'] = batch_spatial_features
         #batch_dict['one_hot']=onehot_labels
