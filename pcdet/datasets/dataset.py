@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import torch.utils.data as torch_data
-
+from data_loader_odo import data_loader
 from ..utils import common_utils
 from .augmentor.data_augmentor import DataAugmentor
 from .processor.data_processor import DataProcessor
@@ -115,6 +115,7 @@ class DatasetTemplate(torch_data.Dataset):
                 voxel_num_points: optional (num_voxels)
                 ...
         """
+        """
         if self.training:
             assert 'gt_boxes' in data_dict, 'gt_boxes should be provided for training'
             gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
@@ -125,7 +126,8 @@ class DatasetTemplate(torch_data.Dataset):
                     'gt_boxes_mask': gt_boxes_mask
                 }
             )
-
+        """
+        """
         if data_dict.get('gt_boxes', None) is not None:
             selected = common_utils.keep_arrays_by_name(data_dict['gt_names'], self.class_names)
             data_dict['gt_boxes'] = data_dict['gt_boxes'][selected]
@@ -133,18 +135,18 @@ class DatasetTemplate(torch_data.Dataset):
             gt_classes = np.array([self.class_names.index(n) + 1 for n in data_dict['gt_names']], dtype=np.int32)
             gt_boxes = np.concatenate((data_dict['gt_boxes'], gt_classes.reshape(-1, 1).astype(np.float32)), axis=1)
             data_dict['gt_boxes'] = gt_boxes
-
-        data_dict = self.point_feature_encoder.forward(data_dict)
-         
+        """
+        #data_dict = self.point_feature_encoder.forward(data_dict)
+        
         data_dict = self.data_processor.forward(
             data_dict=data_dict
         )
 
-        if self.training and len(data_dict['gt_boxes']) == 0:
-            new_index = np.random.randint(self.__len__())
-            return self.__getitem__(new_index)
+        #if self.training and len(data_dict['gt_boxes']) == 0:
+        #    new_index = np.random.randint(self.__len__())
+        #    return self.__getitem__(new_index)
 
-        data_dict.pop('gt_names', None)
+        #data_dict.pop('gt_names', None)
 
         return data_dict
 
@@ -158,7 +160,7 @@ class DatasetTemplate(torch_data.Dataset):
                 data_dict[key].append(val)
         batch_size = len(batch_list)
         ret = {}
-        data_dict.pop('points_sp', None)
+        #data_dict.pop('points_sp', None)
         data_dict.pop('indices', None)
         data_dict.pop('origins', None)
         for key, val in data_dict.items():

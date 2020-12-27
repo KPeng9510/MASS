@@ -22,11 +22,11 @@ class DataProcessor(object):
         mask = common_utils.mask_points_by_range(data_dict['points'], self.point_cloud_range)
         #print(data_dict['points'].shape)
         data_dict['points'] = data_dict['points'][mask]
-        if data_dict.get('gt_boxes', None) is not None and config.REMOVE_OUTSIDE_BOXES and self.training:
-            mask = box_utils.mask_boxes_outside_range_numpy(
-                data_dict['gt_boxes'], self.point_cloud_range, min_num_corners=config.get('min_num_corners', 1)
-            )
-            data_dict['gt_boxes'] = data_dict['gt_boxes'][mask]
+        #if data_dict.get('gt_boxes', None) is not None and config.REMOVE_OUTSIDE_BOXES and self.training:
+        #    mask = box_utils.mask_boxes_outside_range_numpy(
+        #        data_dict['gt_boxes'], self.point_cloud_range, min_num_corners=config.get('min_num_corners', 1)
+        #    )
+        #    data_dict['gt_boxes'] = data_dict['gt_boxes'][mask]
         return data_dict
 
     def shuffle_points(self, data_dict=None, config=None):
@@ -66,7 +66,7 @@ class DataProcessor(object):
             return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator, voxel_generator_2 = voxel_generator_2)
         
         points = data_dict['points']
-        points = data_dict['points_sp']
+        #points = data_dict['points_sp']
         indices = data_dict['indices']
         #print(points.shape)
         """
@@ -78,15 +78,17 @@ class DataProcessor(object):
         pc_range = self.point_cloud_range
         #print(pc_range)
         #print(self.voxel_size)
-        origins = data_dict['origins']
+        origins = np.array([[0,0,0]], dtype=np.float32)
         num_points = points.shape[0]
         num_original = num_points
-        time_stamps = np.array([0],dtype=np.float32)
-        time_stamps = points[indices[:-1], -1]  # counting on the fact we do not miss points from any intermediate time_stamps
-        time_stamps = (time_stamps[:-1]+time_stamps[1:])/2
-        time_stamps = [-1000.0] + time_stamps.tolist() + [1000.0]  # add boundaries
-        time_stamps = np.array(time_stamps)
-        num_original = indices[-1]
+        #time_stamps = np.array([0],dtype=np.float32)
+        time_stamps = np.zeros((points.shape[0], 1)
+        #time_stamps = points[indices[:-1], -1]  # counting on the fact we do not miss points from any intermediate time_stamps
+        #time_stamps = (time_stamps[:-1]+time_stamps[1:])/2
+        #time_stamps = [-1000.0] + time_stamps.tolist() + [1000.0]  # add boundaries
+        #time_stamps = np.array(time_stamps)
+        #num_original = indices[-1]
+        indices =np.array([0],dtype=np.float32)
         #print(time_stamps)
         #print(points.shape)
         #sys.exit()
