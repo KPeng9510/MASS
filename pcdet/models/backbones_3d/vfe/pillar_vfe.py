@@ -97,7 +97,7 @@ class PillarVFE(VFETemplate):
 
     def forward(self, batch_dict, **kwargs):
         #print(batch_dict.keys())
-        gt_boxes = batch_dict["gt_boxes"]
+        #gt_boxes = batch_dict["gt_boxes"]
         #print(batch_dict["gt_names"].size())
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
@@ -110,7 +110,7 @@ class PillarVFE(VFETemplate):
         """
         
         #mask_zero = voxel_features[:,:,-2] == 0
-        seg_gt = voxel_features[:,:,5]
+        #seg_gt = voxel_features[:,:,5]
         #seg_get[mask_zero] == dense[:,:,-2][mask_zero]
         """
         end
@@ -159,6 +159,7 @@ class PillarVFE(VFETemplate):
         encode for dense segmentation gt for each pillar
 
         """
+        """
         zero_mask = seg_gt == 0
         length = seg_gt[zero_mask].size()[0]
         seg_gt_min = torch.min(seg_gt, dim=1,keepdim=True)[0]
@@ -173,6 +174,7 @@ class PillarVFE(VFETemplate):
         mask = seg_gt_after < seg_gt_min
         seg_gt_after[mask] = seg_gt_max[mask]
         batch_dict["pillar_seg_gt"] = seg_gt_after
+        """
         #print(seg_gt_after)
         #sys.exit()
         """

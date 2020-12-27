@@ -36,13 +36,13 @@ class PointPillar(Detector3DTemplate):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
         #self.segmentation_head = FCNMaskHead()
-        self.segmentation_head = UNet(64,15)
+        self.segmentation_head = UNet(64,19)
     def forward(self, batch_dict):
         module_index = 0
         #print(batch_dict.keys())
         #sys.exit()
         
-        for cur_module in self.module_list:
+        for cur_module in self.module_list[:2]:
             module_index += 1
             batch_dict = cur_module(batch_dict)
             #print(batch_dict.keys())
@@ -50,7 +50,7 @@ class PointPillar(Detector3DTemplate):
             #points_mean = batch_dict['pointsmean']
             #batch_size,h,w = points_mean.size()
             #print(batch_dict["gt_boxes"][0,:,-1])
-            if module_index == 4:
+            if module_index == 2:
                 """
                   encode bbox
                 """
@@ -58,15 +58,15 @@ class PointPillar(Detector3DTemplate):
                 #sys.exit()
                 points_mean = batch_dict["points_coor"]
                 #print(points_mean.size())
-                gt_boxes = batch_dict["gt_boxes"]
+                #gt_boxes = batch_dict["gt_boxes"]
                 #batch,c,h,w = points_mean.size()
-                batch,c,h,w=2,3,512,512
+                batch,c,h,w=2,3,1001,501
                 dict_seg = []
                 dict_cls_num = []
                 label_b = batch_dict["labels_seg"]
 
                 
-                for i in range(gt_boxes.size()[0]):
+                for i in range(1):
                     #os.environ['CUDA_LAUNCH_BLOCKING'] = "1" 
                     #print(points_mean.size())
                     points = points_mean
@@ -74,12 +74,14 @@ class PointPillar(Detector3DTemplate):
                     #sys.exit()
                     #print(points[:100,:])
                     #sys.exit()
+                    """
                     box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
                     points.unsqueeze(dim=0).float().cuda(),
                     gt_boxes[i,:,:7].unsqueeze(dim=0).float().cuda()
                     ).long().squeeze(dim=0)
                     label = label_b[i].flatten()
                     gt_boxes_indx = gt_boxes[i,:,-1]
+                    """
                     #print(label)
                     #sys.exit()
                     """
@@ -95,6 +97,7 @@ class PointPillar(Detector3DTemplate):
                     #if i == 1:
                     #    sys.exit()
                     #gt_boxes_indx = gt_boxes_indx[:nonzero_number.int()]
+                    """
                     gt_boxes_indx = torch.cat([torch.Tensor([0]).cuda(),gt_boxes_indx],dim=0)
                     box_idxs_of_pts +=1
                     #print(box_idxs_of_pts)
@@ -107,6 +110,7 @@ class PointPillar(Detector3DTemplate):
                     #print(gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2])
                     #print(label)
                     #sys.exit()
+                    """
                     #print(target_cr)
                     #print(max(box_idxs_of_pts))
                     
@@ -126,7 +130,7 @@ class PointPillar(Detector3DTemplate):
                     #print(limit)
                     
                     #print(target_cr.size())
-                    target_cr = label
+                    target_cr = label_b
                     #print(torch.max(target_cr)[0])
                     #sys.exit()
                     #target_cr = torch.cat([target_cr, target_cr, target_cr], dim=-1)
@@ -171,18 +175,18 @@ class PointPillar(Detector3DTemplate):
                 #im = Image.fromarray(dict_seg[0].view([512,512,1]).cpu().numpy()*10)
                 #im.save("/mrtstorage/users/kpeng/target.jpg")
                 #print(dict_seg[0])
-                targets_crr = torch.cat(dict_seg,dim=0).view(2,1,512,512)[:,:,128:384,128:384]
+                targets_crr = torch.cat(dict_seg,dim=0).view(2,1,501,1001)
                 #print(targets_crr[0])
                 #sys.exit()
                 #print(batch_dict.keys())
                 #print(batch_dict["spatial_features_2d"].size())
                 #print(batch_dict["spatial_features"].size())
-                spatial_features = batch_dict["spatial_features"][:,:,128:384,128:384]
+                spatial_features = batch_dict["spatial_features"]
                 pred = self.segmentation_head(spatial_features)
                 
                 #print(pred.size())
                 #sys.exit()
-                #print(targets_crr[0])
+                #print(targets_crr)
                 
                 #label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
                 #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
@@ -194,12 +198,13 @@ class PointPillar(Detector3DTemplate):
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
                 #pred = torch.argmax(pred_seg, dim=1)
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                target = targets_crr.contiguous().view(2,1,256,256)
+                target = targets_crr.contiguous().view(2,1,501,1001)
                 
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
+                target = torch.clamp(target[nozero_mask],0,19)
                 #print(target[nozero_mask])
-                target = one_hot_1d((target[nozero_mask]-1).long(), 15).unsqueeze(0).permute(0,2,1).cuda()
+                target = one_hot_1d((target-1).long(), 19).unsqueeze(0).permute(0,2,1).cuda()
                 #print(target[:,-100:].size())
                 #pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
                 #print(target[nozero_mask])
@@ -231,12 +236,14 @@ class PointPillar(Detector3DTemplate):
         #pred_dict,_=self.post_processing(batch_dict)
         #print(batch_dict.keys())
         if self.training:
-            loss, tb_dict, disp_dict = self.get_training_loss()
+            #loss, tb_dict, disp_dict = self.get_training_loss()
             #pred_boxes = batch_dict["batch_box_preds"]
             
             ret_dict = {
-                'loss': loss + 1.2*loss_seg
+                'loss': loss_seg
             }
+            disp_dict={}
+            tb_dict={}
             return ret_dict, tb_dict, disp_dict
         else:
             pred_dicts, recall_dicts = self.post_processing(batch_dict)

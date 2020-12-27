@@ -64,10 +64,11 @@ class DataProcessor(object):
             self.grid_size = np.round(grid_size).astype(np.int64)
             self.voxel_size = config.VOXEL_SIZE
             return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator, voxel_generator_2 = voxel_generator_2)
-        
+        #print(test)
+        #sys.exit()
         points = data_dict['points']
         #points = data_dict['points_sp']
-        indices = data_dict['indices']
+        #indices = data_dict['indices']
         #print(points.shape)
         """
            add code for visibility
@@ -81,8 +82,8 @@ class DataProcessor(object):
         origins = np.array([[0,0,0]], dtype=np.float32)
         num_points = points.shape[0]
         num_original = num_points
-        #time_stamps = np.array([0],dtype=np.float32)
-        time_stamps = np.zeros((points.shape[0], 1)
+        time_stamps = np.array([-1000,0],dtype=np.float32)
+        
         #time_stamps = points[indices[:-1], -1]  # counting on the fact we do not miss points from any intermediate time_stamps
         #time_stamps = (time_stamps[:-1]+time_stamps[1:])/2
         #time_stamps = [-1000.0] + time_stamps.tolist() + [1000.0]  # add boundaries
@@ -101,12 +102,12 @@ class DataProcessor(object):
         else:
             
             visibility = mapping.compute_logodds(
-                             ori_points, origins,time_stamps,pc_range,0.2)
+                             ori_points, origins,time_stamps,pc_range,0.1)
         
         np.set_printoptions(threshold=sys.maxsize)
-        visi_map = np.zeros([512, 512,3])
+        visi_map = np.zeros([1001, 501,3])
         visibility = np.int64(visibility)
-        visibility = np.reshape(visibility,(40, 512,512))[0:40, :, :]
+        visibility = np.reshape(visibility,(80, 501,1001))[0:80, :, :]
         visibility = np.transpose(visibility, (2,1,0))
         #print(visibility)
         #sys.exit()
@@ -114,9 +115,9 @@ class DataProcessor(object):
         #print(mask_occ)
         mask_free = (visibility == 0).nonzero()
         mask_unknown = (visibility == -1).nonzero()
-        visi_map[np.int64(mask_free[0]),np.int64(mask_free[1]),:] = np.array([255,0,0])/255
-        visi_map[np.int64(mask_occ[0]),np.int64(mask_occ[1]), :] = np.array([0,255,0])/255
-        visi_map[mask_unknown[0], mask_unknown[1], :] = np.array([0,0,255])/255
+        #visi_map[np.int64(mask_free[0]),np.int64(mask_free[1]),:] = np.array([255,0,0])/255
+        #visi_map[np.int64(mask_occ[0]),np.int64(mask_occ[1]), :] = np.array([0,255,0])/255
+        #visi_map[mask_unknown[0], mask_unknown[1], :] = np.array([0,0,255])/255
         #print(.shape)
         #visibility = np.pad(visibility, ((0,2),(0,0)), 'edge')
         data_dict['vis'] = visibility
@@ -135,8 +136,8 @@ class DataProcessor(object):
         else:
             voxels, coordinates, num_points = voxel_output
 
-        if not data_dict['use_lead_xyz']:
-            voxels = voxels[..., 3:]  # remove xyz in voxels(N, 3)
+        #if not data_dict['use_lead_xyz']:
+        #    voxels = voxels[..., 3:]  # remove xyz in voxels(N, 3)
         data_dict['dense_pillar'] = voxel_dense['voxels']
         data_dict['dense_pillar_coords'] = voxel_dense['coordinates']
         data_dict['voxels'] = voxels

@@ -1,4 +1,4 @@
-DATASET: 'NuScenesDatasetD6'
+DATASET: 'DatasetTemplate'
 DATA_PATH: '../../data_new/'
 
 VERSION: 'v1.0-trainval'

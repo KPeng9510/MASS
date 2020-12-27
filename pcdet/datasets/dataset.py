@@ -1,15 +1,21 @@
 from collections import defaultdict
 from pathlib import Path
-
+import os
 import numpy as np
 import torch.utils.data as torch_data
-from data_loader_odo import data_loader
+#from data_loader_odo import data_loader
 from ..utils import common_utils
 from .augmentor.data_augmentor import DataAugmentor
 from .processor.data_processor import DataProcessor
 from .processor.point_feature_encoder import PointFeatureEncoder
 import sys
-
+def recursive_glob(rootdir=".", suffix=""):
+    return [
+        os.path.join(looproot,filename)
+        for looproot,_, filenames in os.walk(rootdir)
+        for filename in filenames
+        if filename.endswith(suffix)
+    ]
 class DatasetTemplate(torch_data.Dataset):
     def __init__(self, dataset_cfg=None, class_names=None, training=True, root_path=None, logger=None):
         super().__init__()
@@ -27,9 +33,11 @@ class DatasetTemplate(torch_data.Dataset):
             self.dataset_cfg.POINT_FEATURE_ENCODING,
             point_cloud_range=self.point_cloud_range
         )
+        """
         self.data_augmentor = DataAugmentor(
             self.root_path, self.dataset_cfg.DATA_AUGMENTOR, self.class_names, logger=self.logger
-        ) if self.training else None
+        ) if self.training else None"""
+
         self.data_processor = DataProcessor(
             self.dataset_cfg.DATA_PROCESSOR, point_cloud_range=self.point_cloud_range, training=self.training
         )
@@ -38,7 +46,26 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-
+        self.root = "/home/kpeng/pc14/kitti_odo/training/"
+        if training == True:
+            self.split = "train"
+        else:
+            self.split = "test"
+        self.data_dict = {}
+        self.files_seq = []
+        #for index in sequence_num:
+        #self.files_seq.extend(recursive_glob(rootdir=self.root, suffix=".bin"))
+        #print(self.files_seq)
+        #self.files = functools.reduce(operator.iconcat, self.files_seq, [])
+        split = "train"
+        if split == "train":
+            sequence = ["00","01","02","03","04","05","06","07","09","10"]
+        else:
+            sequence = ["08"]
+        #file_list = []
+        for idx, scene in enumerate(sequence):
+            self.files_seq.extend(recursive_glob(self.root+scene+'/', suffix=".bin"))
+        #print(len(self.files_seq)
     @property
     def mode(self):
 
@@ -78,7 +105,7 @@ class DatasetTemplate(torch_data.Dataset):
             self._merge_all_iters_to_one_epoch = False
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self.files_seq)
 
     def __getitem__(self, index):
         """
@@ -92,7 +119,16 @@ class DatasetTemplate(torch_data.Dataset):
         Returns:
 
         """
-        raise NotImplementedError
+        point_path = self.files_seq[index].rstrip()
+        points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])[:, :4]
+        dense_path = '/home/kpeng/pc14/kitti_odo/dense/' +str(point_path).split('/')[-2] +'/'+ str(point_path).split('/')[-1]
+        dense_gt = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1, 5])[:, :5]
+        self.data_dict["dense_point"]=dense_gt
+        points = np.concatenate([points,np.zeros([points.shape[0],1])], axis=-1)
+        self.data_dict["points"] = points
+        ret_dict = self.prepare_data(self.data_dict)
+        return ret_dict
+        
 
     def prepare_data(self, data_dict):
         """
@@ -163,6 +199,8 @@ class DatasetTemplate(torch_data.Dataset):
         #data_dict.pop('points_sp', None)
         data_dict.pop('indices', None)
         data_dict.pop('origins', None)
+        #print(data_dict.keys())
+        #sys.exit()
         for key, val in data_dict.items():
             try:
                 if key in ['voxels', 'voxel_num_points', 'dense_pillar']:
@@ -186,4 +224,5 @@ class DatasetTemplate(torch_data.Dataset):
                 raise TypeError
         #print('vis' in ret.keys())
         ret['batch_size'] = batch_size
+        
         return ret
