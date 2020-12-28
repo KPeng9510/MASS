@@ -175,7 +175,7 @@ class PointPillar(Detector3DTemplate):
                 #im = Image.fromarray(dict_seg[0].view([512,512,1]).cpu().numpy()*10)
                 #im.save("/mrtstorage/users/kpeng/target.jpg")
                 #print(dict_seg[0])
-                targets_crr = torch.cat(dict_seg,dim=0).view(2,1,501,1001)
+                targets_crr = torch.cat(dict_seg,dim=0).view(2,1,500,1000)
                 #print(targets_crr[0])
                 #sys.exit()
                 #print(batch_dict.keys())
@@ -188,21 +188,21 @@ class PointPillar(Detector3DTemplate):
                 #sys.exit()
                 #print(targets_crr)
                 
-                #label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
-                #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
-                #f.write(label)
-                #f.close()
-                #sys.exit()
+                label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
+                f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
+                f.write(label)
+                f.close()
+                sys.exit()
 
                 #targets = batch_dict['one_hot']
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
                 #pred = torch.argmax(pred_seg, dim=1)
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                target = targets_crr.contiguous().view(2,1,501,1001)
+                target = targets_crr.contiguous().view(2,1,500,1000)
                 
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = target != 0
-                target = torch.clamp(target[nozero_mask],0,19)
+                target = torch.clamp(target[nozero_mask],1,19)
                 #print(target[nozero_mask])
                 target = one_hot_1d((target-1).long(), 19).unsqueeze(0).permute(0,2,1).cuda()
                 #print(target[:,-100:].size())

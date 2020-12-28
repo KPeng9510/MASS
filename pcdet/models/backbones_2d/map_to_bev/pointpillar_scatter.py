@@ -27,7 +27,7 @@ class PointPillarScatter(nn.Module):
         self.model_cfg = model_cfg
         self.num_bev_features = self.model_cfg.NUM_BEV_FEATURES
         self.nx, self.ny, self.nz = grid_size
-        self.nx = 1001
+        #self.nx = 1001
         #self.conv_pillar = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=1,bias=False)
         self.conv_visi = nn.Conv2d(80,64,kernel_size=3,stride=1,padding=1,bias=False)
         #self.conv_visi_2 = nn.Conv2d(64,1,kernel_size=3,stride=1,padding=1,bias=False)
@@ -99,7 +99,7 @@ class PointPillarScatter(nn.Module):
         """
            merge
         """
-        batch_spatial_features = batch_spatial_features.contiguous().view(batch_size, (self.num_bev_features+3) * self.nz, self.ny, 1001)
+        batch_spatial_features = batch_spatial_features.contiguous().view(batch_size, (self.num_bev_features+3) * self.nz, self.ny, self.nx)
         #batch_seg_labels = batch_spatial_features[:,-4,:,:].unsqueeze(1)
         
         #zero_mask = batch_seg_labels == 0
