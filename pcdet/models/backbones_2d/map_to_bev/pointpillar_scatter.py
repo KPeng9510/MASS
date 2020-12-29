@@ -23,7 +23,6 @@ def one_hot(labels, num_classes):
 class PointPillarScatter(nn.Module):
     def __init__(self, model_cfg, grid_size, **kwargs):
         super().__init__()
-
         self.model_cfg = model_cfg
         self.num_bev_features = self.model_cfg.NUM_BEV_FEATURES
         self.nx, self.ny, self.nz = grid_size
@@ -39,20 +38,20 @@ class PointPillarScatter(nn.Module):
     def forward(self, batch_dict, **kwargs):
         pillar_features, coords = batch_dict['pillar_features'], batch_dict['voxel_coords']
         #pillar_seg = batch_dict["pillar_seg_gt"]
-        dense_seg = batch_dict["pillar_dense_gt"]
-        dense_coor = batch_dict["dense_pillar_coords"]
+        dense_seg = batch_dict["pillar_dense_gt"].resize(2,1,500,1000)
+        #dense_coor = batch_dict["dense_pillar_coords"]
         #print(pillar_features.dtype)
         #sys.exit()
         visibility = batch_dict['vis'].to(torch.float32).contiguous().permute(0,3,1,2).contiguous() # 2, 40, 512, 512
         #print(visibility[0,2,:100,:100])
         #sys.exit()
-        points_mean = batch_dict["points_mean"].squeeze()
-        pillar_features = torch.cat([pillar_features, points_mean],dim=-1)
+        #points_mean = batch_dict["points_mean"].squeeze()
+        #pillar_features = torch.cat([pillar_features, points_mean],dim=-1)
         batch_spatial_features = []
         batch_size = coords[:, 0].max().int().item() + 1
         for batch_idx in range(batch_size):
             spatial_feature = torch.zeros(
-                67,
+                64,
                 self.nz * self.nx * self.ny,
                 dtype=pillar_features.dtype,
                 device=pillar_features.device)
@@ -68,6 +67,7 @@ class PointPillarScatter(nn.Module):
         """
            dense gt
         """
+        '''
         batch_spatial_dense = []
         batch_size = dense_coor[:, 0].max().int().item() + 1
         for batch_idx in range(batch_size):
@@ -87,29 +87,30 @@ class PointPillarScatter(nn.Module):
             #print(indices.size())
             #print(spatial_dense)
             batch_spatial_dense.append(spatial_dense)
+            '''
 
         """
            end
         """
-        torch.autograd.set_detect_anomaly(True)
+        #torch.autograd.set_detect_anomaly(True)
         batch_spatial_features = torch.stack(batch_spatial_features, 0)
-        batch_spatial_dense = torch.stack(batch_spatial_dense, 0).contiguous().view(batch_size, 1, self.ny,self.nx)
+        #batch_spatial_dense = torch.stack(batch_spatial_dense, 0).contiguous().view(batch_size, 1, self.ny,self.nx)
         #print(batch_spatial_dense.size())
         #sys.exit()
         """
            merge
         """
-        batch_spatial_features = batch_spatial_features.contiguous().view(batch_size, (self.num_bev_features+3) * self.nz, self.ny, self.nx)
+        #batch_spatial_features = batch_spatial_features.contiguous().view(batch_size, (self.num_bev_features+3) * self.nz, self.ny, self.nx)
         #batch_seg_labels = batch_spatial_features[:,-4,:,:].unsqueeze(1)
         
         #zero_mask = batch_seg_labels == 0
-        batch_seg_labels = batch_spatial_dense
+        batch_seg_labels = dense_seg
         #print(batch_spatial_dense[zero_mask])
         #sys.exit()
         """
             end
         """
-        #batch_spatial_features = batch_spatial_features.view(batch_size, (self.num_bev_features+4) * self.nz, self.ny, self.nx)
+        batch_spatial_features = batch_spatial_features.view(batch_size, (self.num_bev_features) * self.nz, self.ny, self.nx)
         #batch_seg_labels = batch_spatial_features[:,-4,:,:].unsqueeze(1)
         batch_dict['labels_seg'] = batch_seg_labels
         #line = torch.zeros([2,1,512,16]).cuda()
@@ -118,9 +119,9 @@ class PointPillarScatter(nn.Module):
         #batch_seg_labels = torch.cat([batch_seg_labels, line], dim=-1)
         #onehot_labels = one_hot(batch_seg_labels.to(torch.int64),16)
         #onehot_labels = onehot_labels[:,:,:,:512]
-        batch_pointsmean = batch_spatial_features[:,64:,:,:]
-        batch_dict['pointsmean'] = batch_pointsmean
-        torch.autograd.set_detect_anomaly(True)
+        #batch_pointsmean = batch_spatial_features[:,64:,:,:]
+        #batch_dict['pointsmean'] = batch_pointsmean
+        #torch.autograd.set_detect_anomaly(True)
         batch_spatial_features = batch_spatial_features[:, :self.num_bev_features,:,:]
         #re_f = self.zp(batch_spatial_features)
         #re_f = self.conv_pillar(batch_spatial_features)

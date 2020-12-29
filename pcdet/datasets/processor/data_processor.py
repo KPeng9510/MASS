@@ -1,5 +1,6 @@
 from functools import partial
 from mapping import mapping
+from voxelize import dense
 import numpy as np
 import sys
 from ...utils import box_utils, common_utils
@@ -54,18 +55,14 @@ class DataProcessor(object):
                 max_num_points=config.MAX_POINTS_PER_VOXEL,
                 max_voxels=config.MAX_NUMBER_OF_VOXELS[self.mode]
             )
-            voxel_generator_2 = VoxelGenerator(
-                voxel_size=config.VOXEL_SIZE,
-                point_cloud_range=self.point_cloud_range,
-                max_num_points=config.MAX_POINTS_PER_VOXEL,
-                max_voxels=60000
-            )
+            
             grid_size = (self.point_cloud_range[3:6] - self.point_cloud_range[0:3]) / np.array(config.VOXEL_SIZE)
             self.grid_size = np.round(grid_size).astype(np.int64)
             self.voxel_size = config.VOXEL_SIZE
             return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator, voxel_generator_2 = voxel_generator_2)
         #print(test)
         #sys.exit()
+        voxel_size = np.array([0.1,0.1,8.0])
         points = data_dict['points']
         #points = data_dict['points_sp']
         #indices = data_dict['indices']
@@ -104,7 +101,7 @@ class DataProcessor(object):
             visibility = mapping.compute_logodds(
                              ori_points, origins,time_stamps,pc_range,0.1)
         
-        np.set_printoptions(threshold=sys.maxsize)
+        #np.set_printoptions(threshold=sys.maxsize)
         visi_map = np.zeros([1001, 501,3])
         visibility = np.int64(visibility)
         visibility = np.reshape(visibility,(80, 500,1000))[0:80, :, :]
@@ -123,10 +120,18 @@ class DataProcessor(object):
         data_dict['vis'] = visibility
         #print(data_dict.keys())
         dense_points = data_dict['dense_point']
+        #print(dense_points[:,-1])
+        #sys.exit()
         points = data_dict['points'] 
-        #print(points.shape)
+        #print(pc_range)
+        #sys.exit()
         voxel_output = voxel_generator.generate(points)
-        voxel_dense = voxel_generator.generate(dense_points)
+        dense_points[:,-1] = np.clip(dense_points[:,-1],0,19)
+        #sys.exit()
+        dense_gt = dense.compute_dense_gt(dense_points, pc_range,voxel_size,20).reshape(20,500,1000)
+        #print(dense_gt.size())
+        #sys.exit()
+        #voxel_dense = voxel_generator.generate(dense_points)
         #print(voxel_dense[...,-1])
         #print(voxel_output['voxels'].shape)
         #sys.exit()
@@ -138,8 +143,8 @@ class DataProcessor(object):
 
         #if not data_dict['use_lead_xyz']:
         #    voxels = voxels[..., 3:]  # remove xyz in voxels(N, 3)
-        data_dict['dense_pillar'] = voxel_dense['voxels']
-        data_dict['dense_pillar_coords'] = voxel_dense['coordinates']
+        data_dict['dense_gt'] = dense_gt
+        #data_dict['dense_pillar_coords'] = voxel_dense['coordinates']
         data_dict['voxels'] = voxels
         data_dict['voxel_coords'] = coordinates
         data_dict['voxel_num_points'] = num_points

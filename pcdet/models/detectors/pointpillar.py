@@ -69,7 +69,7 @@ class PointPillar(Detector3DTemplate):
                 for i in range(1):
                     #os.environ['CUDA_LAUNCH_BLOCKING'] = "1" 
                     #print(points_mean.size())
-                    points = points_mean
+                    #points = points_mean
                     #print(points.size())
                     #sys.exit()
                     #print(points[:100,:])
@@ -130,7 +130,7 @@ class PointPillar(Detector3DTemplate):
                     #print(limit)
                     
                     #print(target_cr.size())
-                    target_cr = label_b
+                    #target_cr = label_b
                     #print(torch.max(target_cr)[0])
                     #sys.exit()
                     #target_cr = torch.cat([target_cr, target_cr, target_cr], dim=-1)
@@ -161,7 +161,7 @@ class PointPillar(Detector3DTemplate):
                     #print(gt_boxes.size()[1])
                     
                     """
-                    dict_seg.append(target_cr.unsqueeze(0))
+                    dict_seg.append(label_b.unsqueeze(0))
                     #print(dict_seg[0].size())
                     #sys.exit()
                     #print(box_idxs_pillar.dtype)
@@ -188,23 +188,23 @@ class PointPillar(Detector3DTemplate):
                 #sys.exit()
                 #print(targets_crr)
                 
-                label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
-                f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
-                f.write(label)
-                f.close()
-                sys.exit()
+                #label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
+                #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
+                #f.write(label)
+                #f.close()
+                #sys.exit()
 
                 #targets = batch_dict['one_hot']
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
                 #pred = torch.argmax(pred_seg, dim=1)
                 #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                target = targets_crr.contiguous().view(2,1,500,1000)
+                targets_crr = targets_crr.contiguous().view(2,1,500,1000)
                 
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
-                nozero_mask = target != 0
-                target = torch.clamp(target[nozero_mask],1,19)
+                nozero_mask = targets_crr != 0
+                targets_crr = torch.clamp(targets_crr[nozero_mask],1,19)
                 #print(target[nozero_mask])
-                target = one_hot_1d((target-1).long(), 19).unsqueeze(0).permute(0,2,1).cuda()
+                targets_crr = one_hot_1d((targets_crr-1).long(), 19).unsqueeze(0).permute(0,2,1).cuda()
                 #print(target[:,-100:].size())
                 #pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
                 #print(target[nozero_mask])
@@ -215,7 +215,7 @@ class PointPillar(Detector3DTemplate):
                 #print(target.size())
                 #sys.exit()
                 pred = pred.permute(0,2,3,1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
-                loss_seg = F.binary_cross_entropy_with_logits(pred,target,reduction='mean')
+                loss_seg = F.binary_cross_entropy_with_logits(pred,targets_crr,reduction='mean')
                 #print(loss_seg)
                 #sys.exit()
         """

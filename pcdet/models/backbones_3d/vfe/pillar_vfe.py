@@ -55,7 +55,7 @@ class PFNLayer(nn.Module):
 class PillarVFE(VFETemplate):
     def __init__(self, model_cfg, num_point_features, voxel_size, point_cloud_range):
         super().__init__(model_cfg=model_cfg)
-        num_point_features=5
+        num_point_features=4
         self.use_norm = self.model_cfg.USE_NORM
         self.with_distance = self.model_cfg.WITH_DISTANCE
         self.use_absolute_xyz = self.model_cfg.USE_ABSLOTE_XYZ
@@ -101,10 +101,18 @@ class PillarVFE(VFETemplate):
         #print(batch_dict["gt_names"].size())
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
-        dense_gt = batch_dict['dense_pillar'][:,:,-1]
+        dense_gt = batch_dict['dense_gt'].permute(0,2,3,1).reshape(2*500*1000,20) # 2, 20, 500, 1000
+
+        weight_5_class = [1,2,5,3,4,6,7,8]
+        weight_0_class = [0]
+        weight_1_class = [9,10,11,12,13,14,15,16,17,18,19]
+        dense_gt[:,weight_5_class]= dense_gt[:,weight_5_class]*5
+        dense_gt[:,weight_0_class]=dense_gt[:,weight_0_class]*0
+        dense_gt[:,weight_1_class]=dense_gt[:,weight_1_class]*1
+        dense_gt = torch.argmax(dense_gt,dim=-1)
         #print(dense_gt)
         #sys.exit()
-        coor = batch_dict['dense_pillar_coords']
+        #coor = batch_dict['dense_pillar_coords']
         """
         merge sem gt
         """
@@ -130,11 +138,12 @@ class PillarVFE(VFETemplate):
             print(torch.max(box_idxs_of_pts))
             print(gt_boxes.size())
         """
-        voxel_features= torch.cat([voxel_features[:,:,:4],voxel_features[:,:,-1].unsqueeze(-1)],dim=-1)
+        voxel_features= voxel_features[:,:,:4]
 
         """
         encode for segmentation gt for each pillar
 
+        """
         """
         zero_mask = dense_gt == 0
         length = dense_gt[zero_mask].size()[0]
@@ -149,7 +158,8 @@ class PillarVFE(VFETemplate):
 
         mask = dense_gt_after < dense_gt_min
         dense_gt_after[mask] = dense_gt_max[mask]
-        batch_dict["pillar_dense_gt"] = dense_gt_after
+        """
+        batch_dict["pillar_dense_gt"] = dense_gt
         """
         encode end for segmentation gt for each pillar
 

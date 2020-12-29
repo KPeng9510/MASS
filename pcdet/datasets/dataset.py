@@ -1,6 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 import os
+import pickle
 import numpy as np
 import torch.utils.data as torch_data
 #from data_loader_odo import data_loader
@@ -63,8 +64,17 @@ class DatasetTemplate(torch_data.Dataset):
         else:
             sequence = ["08"]
         #file_list = []
-        for idx, scene in enumerate(sequence):
-            self.files_seq.extend(recursive_glob(self.root+scene+'/', suffix=".bin"))
+        #for idx, scene in enumerate(sequence):
+        #    self.files_seq.extend(recursive_glob(self.root+scene+'/', suffix=".bin"))
+        file_name = "/home/kpeng/pc14/sample.pkl"
+
+        #open_file = open(file_name, "wb")
+        #pickle.dump(self.files_seq, open_file)
+        #open_file.close()
+        #sys.exit()
+        open_file = open(file_name, "rb")
+        self.files_seq = pickle.load(open_file)
+        open_file.close()
         #print(len(self.files_seq)
     @property
     def mode(self):
@@ -203,9 +213,9 @@ class DatasetTemplate(torch_data.Dataset):
         #sys.exit()
         for key, val in data_dict.items():
             try:
-                if key in ['voxels', 'voxel_num_points', 'dense_pillar']:
+                if key in ['voxels', 'voxel_num_points']:
                     ret[key] = np.concatenate(val, axis=0)
-                elif key in ['points', 'voxel_coords', 'dense_pillar_coords', 'dense_point']:
+                elif key in ['points', 'voxel_coords', 'dense_point']:
                     coors = []
                     for i, coor in enumerate(val):
                         coor_pad = np.pad(coor, ((0, 0), (1, 0)), mode='constant', constant_values=i)
