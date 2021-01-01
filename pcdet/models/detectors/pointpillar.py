@@ -5,10 +5,96 @@ import sys
 from .erfnet import Net
 import os
 import torch.nn.functional as F
+import torch.nn as nn
 import torch
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
 from PIL import Image
 import numpy as np
+class FocalLoss(nn.Module):
+    """
+    copy from: https://github.com/Hsuxu/Loss_ToolBox-PyTorch/blob/master/FocalLoss/FocalLoss.py
+    This is a implementation of Focal Loss with smooth label cross entropy supported which is proposed in
+    'Focal Loss for Dense Object Detection. (https://arxiv.org/abs/1708.02002)'
+        Focal_Loss= -1*alpha*(1-pt)*log(pt)
+    :param num_class:
+    :param alpha: (tensor) 3D or 4D the scalar factor for this criterion
+    :param gamma: (float,double) gamma > 0 reduces the relative loss for well-classified examples (p>0.5) putting more
+                    focus on hard misclassified example
+    :param smooth: (float,double) smooth value when cross entropy
+    :param balance_index: (int) balance class index, should be specific when alpha is float
+    :param size_average: (bool, optional) By default, the losses are averaged over each loss element in the batch.
+    """
+
+    def __init__(self, apply_nonlin=None, alpha=None, gamma=2, balance_index=0, smooth=1e-5, size_average=True):
+        super(FocalLoss, self).__init__()
+        self.apply_nonlin = apply_nonlin
+        self.alpha = alpha
+        self.gamma = gamma
+        self.balance_index = balance_index
+        self.smooth = smooth
+        self.size_average = size_average
+
+        if self.smooth is not None:
+            if self.smooth < 0 or self.smooth > 1.0:
+                raise ValueError('smooth value should be in [0,1]')
+
+    def forward(self, logit, target):
+        if self.apply_nonlin is not None:
+            logit = self.apply_nonlin(logit)
+        num_class = logit.shape[1]
+
+        if logit.dim() > 2:
+            # N,C,d1,d2 -> N,C,m (m=d1*d2*...)
+            logit = logit.view(logit.size()[0], logit.size()[1], logit.size()[3])
+            logit = logit.permute(0, 2, 1).contiguous()
+            logit = logit.view(-1, logit.size(-1))
+        target = torch.unsqueeze(target, 1)
+        target = target.view(-1, 1)
+        # print(logit.shape, target.shape)
+        # 
+        alpha = self.alpha
+
+        if alpha is None:
+            alpha = torch.ones(num_class, 1)
+        elif isinstance(alpha, (list, np.ndarray)):
+            assert len(alpha) == num_class
+            alpha = torch.FloatTensor(alpha).view(num_class, 1)
+            alpha = alpha / alpha.sum()
+        elif isinstance(alpha, float):
+            alpha = torch.ones(num_class, 1)
+            alpha = alpha * (1 - self.alpha)
+            alpha[self.balance_index] = self.alpha
+
+        else:
+            raise TypeError('Not support alpha type')
+        
+        if alpha.device != logit.device:
+            alpha = alpha.to(logit.device)
+
+        idx = target.cpu().long()
+
+        one_hot_key = torch.FloatTensor(target.size()[0], num_class).zero_()
+        one_hot_key = one_hot_key.scatter_(1, idx, 1)
+        if one_hot_key.device != logit.device:
+            one_hot_key = one_hot_key.to(logit.device)
+
+        if self.smooth:
+            one_hot_key = torch.clamp(
+                one_hot_key, self.smooth/(num_class-1), 1.0 - self.smooth)
+        pt = (one_hot_key * logit).sum(1) + self.smooth
+        logpt = pt.log()
+
+        gamma = self.gamma
+
+        alpha = alpha[idx]
+        alpha = torch.squeeze(alpha)
+        loss = -1 * alpha * torch.pow((1 - pt), gamma) * logpt
+
+        if self.size_average:
+            loss = loss.mean()
+        else:
+            loss = loss.sum()
+        return loss
 def one_hot(labels, num_classes):
     '''
     Converts an integer label torch.autograd.Variable to a one-hot Variable.
@@ -36,7 +122,8 @@ class PointPillar(Detector3DTemplate):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
         #self.segmentation_head = FCNMaskHead()
-        self.segmentation_head = UNet(64,19)
+        self.segmentation_head = UNet(64,13)
+        self.focal_loss = FocalLoss()
     def forward(self, batch_dict):
         module_index = 0
         #print(batch_dict.keys())
@@ -60,7 +147,7 @@ class PointPillar(Detector3DTemplate):
                 #print(points_mean.size())
                 #gt_boxes = batch_dict["gt_boxes"]
                 #batch,c,h,w = points_mean.size()
-                batch,c,h,w=2,3,1001,501
+                batch,c,h,w=2,3,1000,500
                 dict_seg = []
                 dict_cls_num = []
                 label_b = batch_dict["labels_seg"]
@@ -137,7 +224,7 @@ class PointPillar(Detector3DTemplate):
                     #print(target_cr.size())
                     #im = Image.fromarray((target_cr.int().cpu().numpy()*10), 'RGB')
                     #f=open("/mrtstorage/users/kpeng/label.bin",'wb')
-                    #f.write(label.view(h,w).cpu().numpy().astype(np.float32).tobytes())
+                    #f.write(label_b[0].view(h,w).cpu().numpy().astype(np.float32).tobytes())
                     #f.close()
                     #sys.exit()
                     #target_label = torch.zeros([1,1,h,16], dtype=target_cr.dtype, device = target_cr.device)
@@ -202,9 +289,9 @@ class PointPillar(Detector3DTemplate):
                 
                 #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = targets_crr != 0
-                targets_crr = torch.clamp(targets_crr[nozero_mask],1,19)
+                targets_crr = torch.clamp(targets_crr[nozero_mask],1,13)
                 #print(target[nozero_mask])
-                targets_crr = one_hot_1d((targets_crr-1).long(), 19).unsqueeze(0).permute(0,2,1).cuda()
+                targets_crr = one_hot_1d((targets_crr-1).long(), 13).unsqueeze(0).permute(0,2,1).cuda()
                 #print(target[:,-100:].size())
                 #pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
                 #print(target[nozero_mask])
@@ -215,7 +302,26 @@ class PointPillar(Detector3DTemplate):
                 #print(target.size())
                 #sys.exit()
                 pred = pred.permute(0,2,3,1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
-                loss_seg = F.binary_cross_entropy_with_logits(pred,targets_crr,reduction='mean')
+                #print(pred.size())
+                #print(targets_crr.size())
+                #sys.exit()
+                #pred = torch.argmax(pred,dim=1).permute(1,0)
+                #targets_crr = torch.argmax(targets_crr,dim=1).permute(1,0)
+                #print(pred.size())
+                #print(targets_crr.size())
+                #sys.exit()
+                object_list = {1,3,4}
+                for obj in object_list:
+                    if obj == 1:
+                        mask_obj = targets_crr == obj
+                    else:
+                        mask_obj = mask_obj | (targets_crr == obj)
+                weight = torch.ones_like(targets_crr)
+                mask_person = targets_crr == 2
+                weight[mask_obj]==5
+                weight[mask_person]==8
+                loss_seg = F.binary_cross_entropy_with_logits(pred,targets_crr,reduction='mean',weight=weight)
+                #loss_seg = self.focal_loss(pred.unsqueeze(1),targets_crr.unsqueeze(1))
                 #print(loss_seg)
                 #sys.exit()
         """

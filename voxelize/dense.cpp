@@ -43,7 +43,7 @@ Eigen::VectorXf _compute_dense_gt(const Eigen::MatrixXf & original_points,
     const int G1 = vxsize;
     const int G2 = vysize * G1; //result in y*x format
     //const int G3 = vzsize * GO2;
-    const int G3 = 20 * G2;//result format class_number*y*x
+    const int G3 = 13 * G2;//result format class_number*y*x
     //
     //Eigen::RowVector3f offset3d(pxmin, pymin, pzmin);
     //Eigen::RowVector4f offset4d(pxmin, pymin, pzmin, 0.0f);
