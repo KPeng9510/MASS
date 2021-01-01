@@ -121,159 +121,25 @@ class PointPillar(Detector3DTemplate):
     def __init__(self, model_cfg, num_class, dataset):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
-        #self.segmentation_head = FCNMaskHead()
         self.segmentation_head = UNet(64,13)
         self.focal_loss = FocalLoss()
     def forward(self, batch_dict):
         module_index = 0
-        #print(batch_dict.keys())
-        #sys.exit()
         
         for cur_module in self.module_list[:2]:
             module_index += 1
             batch_dict = cur_module(batch_dict)
-            #print(batch_dict.keys())
-            #torch.cuda.empty_cache()
-            #points_mean = batch_dict['pointsmean']
-            #batch_size,h,w = points_mean.size()
-            #print(batch_dict["gt_boxes"][0,:,-1])
             if module_index == 2:
-                """
-                  encode bbox
-                """
-                #print(batch_dict.keys())
-                #sys.exit()
+
                 points_mean = batch_dict["points_coor"]
-                #print(points_mean.size())
-                #gt_boxes = batch_dict["gt_boxes"]
-                #batch,c,h,w = points_mean.size()
-                batch,c,h,w=2,3,1000,500
                 dict_seg = []
                 dict_cls_num = []
                 label_b = batch_dict["labels_seg"]
 
-                
-                for i in range(1):
-                    #os.environ['CUDA_LAUNCH_BLOCKING'] = "1" 
-                    #print(points_mean.size())
-                    #points = points_mean
-                    #print(points.size())
-                    #sys.exit()
-                    #print(points[:100,:])
-                    #sys.exit()
-                    """
-                    box_idxs_of_pts = roiaware_pool3d_utils.points_in_boxes_gpu(
-                    points.unsqueeze(dim=0).float().cuda(),
-                    gt_boxes[i,:,:7].unsqueeze(dim=0).float().cuda()
-                    ).long().squeeze(dim=0)
-                    label = label_b[i].flatten()
-                    gt_boxes_indx = gt_boxes[i,:,-1]
-                    """
-                    #print(label)
-                    #sys.exit()
-                    """
-                    if i == 1:
-                        sys.exit()
-                    """
-                    #nonzero_number = torch.sum(nonzero_mask.float())
-                    #print(gt_boxes_indx)
-                    #print(box_idxs_of_pts.max())
-                    #sys.exit()
-                    #print(nonzero_number)
-                    #print(gt_boxes_indx.size())
-                    #if i == 1:
-                    #    sys.exit()
-                    #gt_boxes_indx = gt_boxes_indx[:nonzero_number.int()]
-                    """
-                    gt_boxes_indx = torch.cat([torch.Tensor([0]).cuda(),gt_boxes_indx],dim=0)
-                    box_idxs_of_pts +=1
-                    #print(box_idxs_of_pts)
-                    #sys.exit()
-                    # = target_cr != 0
-                    #nonzero_mask = (label ==0)
-                    #label[nonzero_mask] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask]
-                    nonzero_mask_2 = gt_boxes_indx[box_idxs_of_pts.long()] != 0
-                    label[nonzero_mask_2] = gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2]
-                    #print(gt_boxes_indx[box_idxs_of_pts.long()][nonzero_mask_2])
-                    #print(label)
-                    #sys.exit()
-                    """
-                    #print(target_cr)
-                    #print(max(box_idxs_of_pts))
-                    
-                    #sys.exit()
-                    #torch.set_printoptions(profile="full")
-                    #if i == 1:
-                    #    sys.exit()
-                    #mask = (box_idxs_of_pts == -1) & (box_idxs_of_pts >= nonzero_number)
-                    #box_idxs_of_pts[mask] = -1
-                    #box_idxs_of_pts += 1
-                    #print(target_cr)
-                    #target_cr = label
-                    #limit = torch.max(target_cr)
-                    
-                    #sys.exit()
-                    #print(limit)
-                    #print(limit)
-                    
-                    #print(target_cr.size())
-                    #target_cr = label_b
-                    #print(torch.max(target_cr)[0])
-                    #sys.exit()
-                    #target_cr = torch.cat([target_cr, target_cr, target_cr], dim=-1)
-                    #print(target_cr.size())
-                    #im = Image.fromarray((target_cr.int().cpu().numpy()*10), 'RGB')
-                    #f=open("/mrtstorage/users/kpeng/label.bin",'wb')
-                    #f.write(label_b[0].view(h,w).cpu().numpy().astype(np.float32).tobytes())
-                    #f.close()
-                    #sys.exit()
-                    #target_label = torch.zeros([1,1,h,16], dtype=target_cr.dtype, device = target_cr.device)
-                    #for i in range(16):
-                    #    target_label[:,:,:,i] = i
-                    #target_cr = torch.cat([target_cr,target_label],dim=-1)
-                    #box_idxs_pillar = one_hot(target_cr.to(torch.int64), 16)
-                    #box_idxs_pillar = box_idxs_pillar[:,:,:,:w]
-                    #driveable_area = torch.zeros([1,1,h,w],dtype=box_idxs_pillar.dtype, device=box_idxs_pillar.device)
-                    #box_idxs_pillar = torch.cat([box_idxs_pillar[:,:limit.int()-1,:,:],driveable_area,box_idxs_pillar[:,-1,:,:].unsqueeze(1)],dim=1)
-                    """
-                    for i in range(12):
-                         print(target_cr.size())
-                         #sys.exit()
-                         judgement = (target_cr.view(1,1,w,h).int() == i)
-                         print(judgement)
-                         if ((target_cr == i).byte().float().nonzero().size()[0] == 0):
-                             new_tensor = torch.zeros([1,1,h,w],dtype=box_idxs_pillar.dtype, device=box_idxs_pillar.device)
-                             box_idxs_pillar = torch.cat([box_idxs_pillar[:,:i,:,:], new_tensor[:,:,:,:], box_idxs_pillar[:,i:,:,:]])
-                    #print(box_idxs_pillar.size())
-                    #print(gt_boxes.size()[1])
-                    
-                    """
-                    dict_seg.append(label_b.unsqueeze(0))
-                    #print(dict_seg[0].size())
-                    #sys.exit()
-                    #print(box_idxs_pillar.dtype)
-                    #dict_cls_num.append(limit.to(torch.int64))
-                    #print(gt_boxes.size())
-
-                """
-                 end
-                """
-                #print(dict_seg[0].size())
-                #im = Image.fromarray(dict_seg[0].view([512,512,1]).cpu().numpy()*10)
-                #im.save("/mrtstorage/users/kpeng/target.jpg")
-                #print(dict_seg[0])
-                targets_crr = torch.cat(dict_seg,dim=0).view(2,1,500,1000)
-                #print(targets_crr[0])
-                #sys.exit()
-                #print(batch_dict.keys())
-                #print(batch_dict["spatial_features_2d"].size())
-                #print(batch_dict["spatial_features"].size())
+                batch,c,h,w =label_b.size()
+                targets_crr = label_b.view(batch,c,h,w)#torch.cat(dict_seg,dim=0).view(batch,c,h,w)
                 spatial_features = batch_dict["spatial_features"]
                 pred = self.segmentation_head(spatial_features)
-                
-                #print(pred.size())
-                #sys.exit()
-                #print(targets_crr)
                 
                 #label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
                 #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
@@ -281,35 +147,12 @@ class PointPillar(Detector3DTemplate):
                 #f.close()
                 #sys.exit()
 
-                #targets = batch_dict['one_hot']
-                #tar = torch.argmax(batch_dict['one_hot'],dim=1)
-                #pred = torch.argmax(pred_seg, dim=1)
-                #targets = (targets.bool() | targets_crr.bool()).to(torch.float32)
-                targets_crr = targets_crr.contiguous().view(2,1,500,1000)
+                targets_crr = targets_crr.contiguous().view(batch,c,h,w)
                 
-                #target = torch.argmax(targets, dim=1) #from 0 to 15
                 nozero_mask = targets_crr != 0
                 targets_crr = torch.clamp(targets_crr[nozero_mask],1,13)
-                #print(target[nozero_mask])
                 targets_crr = one_hot_1d((targets_crr-1).long(), 13).unsqueeze(0).permute(0,2,1).cuda()
-                #print(target[:,-100:].size())
-                #pred = torch.argmax(pred_seg, dim=1).unsqueeze(1)
-                #print(target[nozero_mask])
-                #sys.exit()
-                #pred = one_hot_1d((pred[nozero_mask]).long(),15)
-                #sys.exit()
-                #print(pred_seg.size())
-                #print(target.size())
-                #sys.exit()
                 pred = pred.permute(0,2,3,1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
-                #print(pred.size())
-                #print(targets_crr.size())
-                #sys.exit()
-                #pred = torch.argmax(pred,dim=1).permute(1,0)
-                #targets_crr = torch.argmax(targets_crr,dim=1).permute(1,0)
-                #print(pred.size())
-                #print(targets_crr.size())
-                #sys.exit()
                 object_list = {1,3,4}
                 for obj in object_list:
                     if obj == 1:
@@ -321,29 +164,10 @@ class PointPillar(Detector3DTemplate):
                 weight[mask_obj]==5
                 weight[mask_person]==8
                 loss_seg = F.binary_cross_entropy_with_logits(pred,targets_crr,reduction='mean',weight=weight)
-                #loss_seg = self.focal_loss(pred.unsqueeze(1),targets_crr.unsqueeze(1))
-                #print(loss_seg)
-                #sys.exit()
         """
            code for geomertic consistency
         """
-        #pred_dict,_=self.post_processing(batch_dict)
-        
-        #pred_boxs = pred_dict
-        #positive_mask = pred_cls >= 1
-        #print(pred_cls.size())
-        #print(pred_boxs[0]["pred_boxes"].size())
-        #print(pred_labels[0]["pred_labels"].size())
-        #print(positive_mask.size())
-        #p_box = pred_boxs[positive_mask]
-        #pred_boxes = batch_dict[car_mask]
-        #print(p_box)
-        #sys.exit()
-        #pred_dict,_=self.post_processing(batch_dict)
-        #print(batch_dict.keys())
         if self.training:
-            #loss, tb_dict, disp_dict = self.get_training_loss()
-            #pred_boxes = batch_dict["batch_box_preds"]
             
             ret_dict = {
                 'loss': loss_seg
