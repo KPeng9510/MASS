@@ -151,18 +151,23 @@ class PointPillar(Detector3DTemplate):
                 
                 nozero_mask = targets_crr != 0
                 targets_crr = torch.clamp(targets_crr[nozero_mask],1,13)
+                #ori_target = targets_crr
                 targets_crr = one_hot_1d((targets_crr-1).long(), 13).unsqueeze(0).permute(0,2,1).cuda()
                 pred = pred.permute(0,2,3,1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
-                object_list = {1,3,4}
-                for obj in object_list:
-                    if obj == 1:
-                        mask_obj = targets_crr == obj
-                    else:
-                        mask_obj = mask_obj | (targets_crr == obj)
+                object_list = [0,2,3]
+                #for obj in object_list:
+                #    if obj == 1:
+                #        mask_obj = ori_target == obj
+                #    else:
+                #        mask_obj = mask_obj | (targets_crr == obj)
                 weight = torch.ones_like(targets_crr)
-                mask_person = targets_crr == 2
-                weight[mask_obj]==5
-                weight[mask_person]==8
+                #print(weight.size())
+                #sys.exit()
+                #mask_person = targets_crr == 1
+                #weight[mask_obj]==5
+                #weight[mask_person]==8
+                weight[:,[0,2,3],:]=5 # weight 5 for other dynamic object
+                weight[:,1,:]=8 # weight8 for pedestrain
                 loss_seg = F.binary_cross_entropy_with_logits(pred,targets_crr,reduction='mean',weight=weight)
         """
            code for geomertic consistency
