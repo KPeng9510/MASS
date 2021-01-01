@@ -184,11 +184,11 @@ class PointPillar(Detector3DTemplate):
                 #sys.exit()
                 #print(targets_crr[0])
                 
-                label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
-                f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
-                f.write(label)
-                f.close()
-                sys.exit()
+                #label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
+                #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
+                #f.write(label)
+                #f.close()
+                #sys.exit()
 
                 #targets = batch_dict['one_hot']
                 #tar = torch.argmax(batch_dict['one_hot'],dim=1)
