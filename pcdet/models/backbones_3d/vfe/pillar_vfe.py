@@ -84,7 +84,7 @@ class Graph_attention(nn.Module):
         #row = torch.arange(0,b).unsqueeze(-1).repeat(1,b).view(1,b*b)
         
         batch = torch.zeros(b).long().cuda()
-        col = fps(y, batch, ratio=0.05, random_start=True).cuda()
+        col = fps(y, batch, ratio=0.03, random_start=True).cuda()
         fps_p = len(col)
         row = torch.arange(0,b).unsqueeze(-1).repeat(1,fps_p).view(1,b*fps_p).long().cuda()
         col = col.repeat(b,1).view(1,b*fps_p)
