@@ -22,7 +22,7 @@ class data_loader(data.Dataset):
         version="kitti-odo",
         test_mode=False,
     ):
-        self.root = "/home/kpeng/pc14/kitti_odo/training/"
+        self.root = "/home/ki/input/kitti/semantickitti/dataset/sequences/"
         
         self.split = split
         
@@ -52,7 +52,7 @@ class data_loader(data.Dataset):
         """
         point_path = self.files_seq[index].rstrip()
         points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])[:, :4]
-        dense_path = '/home/kpeng/pc14/kitti_odo/dense/' +str(point_path).split('/')[-2] +'/'+ str(point_path).split('/')[-1]
+        dense_path = '/home/ki/hdd0/input/kitti/semantickitti/dense/' +str(point_path).split('/')[-2] +'/'+ str(point_path).split('/')[-1]
         dense_gt = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1, 5])[:, :5]
         self.data_dict["dense_gt"]=dense_gt
         self.data_dict["points"] = points

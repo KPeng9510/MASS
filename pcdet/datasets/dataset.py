@@ -4,19 +4,25 @@ import os
 import pickle
 import numpy as np
 import torch.utils.data as torch_data
-#from data_loader_odo import data_loader
+# from data_loader_odo import data_loader
 from ..utils import common_utils
 from .augmentor.data_augmentor import DataAugmentor
 from .processor.data_processor import DataProcessor
 from .processor.point_feature_encoder import PointFeatureEncoder
 import sys
+from pathlib import Path
+from skimage import io
+
+
 def recursive_glob(rootdir=".", suffix=""):
     return [
-        os.path.join(looproot,filename)
-        for looproot,_, filenames in os.walk(rootdir)
+        os.path.join(looproot, filename)
+        for looproot, _, filenames in os.walk(rootdir)
         for filename in filenames
         if filename.endswith(suffix)
     ]
+
+
 class DatasetTemplate(torch_data.Dataset):
     def __init__(self, dataset_cfg=None, class_names=None, training=True, root_path=None, logger=None):
         super().__init__()
@@ -34,10 +40,9 @@ class DatasetTemplate(torch_data.Dataset):
             self.dataset_cfg.POINT_FEATURE_ENCODING,
             point_cloud_range=self.point_cloud_range
         )
-        """
         self.data_augmentor = DataAugmentor(
             self.root_path, self.dataset_cfg.DATA_AUGMENTOR, self.class_names, logger=self.logger
-        ) if self.training else None"""
+        ) if self.training else None
 
         self.data_processor = DataProcessor(
             self.dataset_cfg.DATA_PROCESSOR, point_cloud_range=self.point_cloud_range, training=self.training
@@ -47,35 +52,39 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = "/home/kpeng/pc14/kitti_odo/training/"
+        self.root = Path("/home/ki/input/kitti/semantickitti/dataset/")
+        self.gt_dense_bin_root = self.root / 'pillarseg' / 'gt_dense_bin'
+        self.gt_dense_img_root = self.root / 'pillarseg' / 'gt_dense_image'
+        self.gt_obser_img_root = self.root / 'pillarseg'
+
         if training == True:
             self.split = "train"
         else:
             self.split = "test"
-        self.data_dict = {}
         self.files_seq = []
-        #for index in sequence_num:
-        #self.files_seq.extend(recursive_glob(rootdir=self.root, suffix=".bin"))
-        #print(self.files_seq)
-        #self.files = functools.reduce(operator.iconcat, self.files_seq, [])
+        # for index in sequence_num:
+        # self.files_seq.extend(recursive_glob(rootdir=str(self.root / 'sequences'), suffix=".bin"))
+        # print(self.files_seq)
+        # self.files = functools.reduce(operator.iconcat, self.files_seq, [])
         split = "train"
         if split == "train":
-            sequence = ["00","01","02","03","04","05","06","07","09","10"]
+            sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
         else:
             sequence = ["08"]
-        #file_list = []
-        #for idx, scene in enumerate(sequence):
+        # file_list = []
+        # for idx, scene in enumerate(sequence):
         #    self.files_seq.extend(recursive_glob(self.root+scene+'/', suffix=".bin"))
-        file_name = "/home/kpeng/pc14/sample.pkl"
+        file_name = "/home/ki/input/kitti/semantickitti/dataset/sample.pkl"
 
-        #open_file = open(file_name, "wb")
-        #pickle.dump(self.files_seq, open_file)
-        #open_file.close()
-        #sys.exit()
+        # open_file = open(file_name, "wb")
+        # pickle.dump(self.files_seq, open_file)
+        # open_file.close()
+        # sys.exit()
         open_file = open(file_name, "rb")
         self.files_seq = pickle.load(open_file)
         open_file.close()
-        #print(len(self.files_seq)
+        # print(len(self.files_seq)
+
     @property
     def mode(self):
 
@@ -114,6 +123,21 @@ class DatasetTemplate(torch_data.Dataset):
         else:
             self._merge_all_iters_to_one_epoch = False
 
+    def get_dense_gt_bin(self, seq, index):
+        f_file = self.gt_dense_bin_root / seq / ('%s.bin' % index)
+        assert f_file.exists()
+        return np.fromfile(str(f_file), dtype=np.float32, count=-1).reshape(500, 1000, 1)
+
+    def get_dense_gt_img(self, seq, index):
+        f_file = self.gt_dense_img_root / seq / ('%s.png' % index)
+        assert f_file.exists()
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
+
+    def get_obser_img(self, seq, index):
+        f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/observations/%015d.png' % int(index))
+        assert f_file.exists()
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(501, 1001, 1)
+
     def __len__(self):
         return len(self.files_seq)
 
@@ -129,16 +153,38 @@ class DatasetTemplate(torch_data.Dataset):
         Returns:
 
         """
-        point_path = self.files_seq[index].rstrip()
-        points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])[:, :4]
-        dense_path = '/home/kpeng/pc14/kitti_odo/dense/' +str(point_path).split('/')[-2] +'/'+ str(point_path).split('/')[-1]
-        dense_gt = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1, 5])[:, :5]
-        self.data_dict["dense_point"]=dense_gt
-        points = np.concatenate([points,np.zeros([points.shape[0],1])], axis=-1)
-        self.data_dict["points"] = points
-        ret_dict = self.prepare_data(self.data_dict)
-        return ret_dict
-        
+        data_dict = {}
+        point_path = Path(self.files_seq[index].rstrip())
+        # print(point_path)
+        points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])
+        mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
+        points = points[mask]
+
+        points = np.concatenate([points, np.zeros([points.shape[0], 1])], axis=-1)
+        data_dict["points"] = points
+
+        seq = str(point_path).split('/')[-3]
+        idx = point_path.stem
+
+        dense_gt = self.get_dense_gt_bin(seq, idx)
+        data_dict['labels_seg'] = dense_gt
+
+
+        # load observations
+        obser = self.get_obser_img(seq, idx)[:500, :1000, :]
+        # print(obser.shape)
+        data_dict['observations'] = obser
+
+        data_dict = self.prepare_data(data_dict)
+
+        dense_gt = np.transpose(data_dict['labels_seg'], (2, 0, 1))  # 1, 500, 1000
+        data_dict['labels_seg'] = dense_gt
+
+        obser = np.transpose(data_dict['observations'], (2, 0, 1))
+        data_dict['observations'] = obser / 255  # normalization
+
+        data_dict.pop('points', None)
+        return data_dict
 
     def prepare_data(self, data_dict):
         """
@@ -161,57 +207,38 @@ class DatasetTemplate(torch_data.Dataset):
                 voxel_num_points: optional (num_voxels)
                 ...
         """
-        """
         if self.training:
-            assert 'gt_boxes' in data_dict, 'gt_boxes should be provided for training'
-            gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
+            data_dict = self.data_augmentor.forward(data_dict=data_dict)
 
-            data_dict = self.data_augmentor.forward(
-                data_dict={
-                    **data_dict,
-                    'gt_boxes_mask': gt_boxes_mask
-                }
-            )
-        """
-        """
-        if data_dict.get('gt_boxes', None) is not None:
-            selected = common_utils.keep_arrays_by_name(data_dict['gt_names'], self.class_names)
-            data_dict['gt_boxes'] = data_dict['gt_boxes'][selected]
-            data_dict['gt_names'] = data_dict['gt_names'][selected]
-            gt_classes = np.array([self.class_names.index(n) + 1 for n in data_dict['gt_names']], dtype=np.int32)
-            gt_boxes = np.concatenate((data_dict['gt_boxes'], gt_classes.reshape(-1, 1).astype(np.float32)), axis=1)
-            data_dict['gt_boxes'] = gt_boxes
-        """
-        #data_dict = self.point_feature_encoder.forward(data_dict)
-        
+        # debug data augmentation
+        # gt_seg = data_dict['labels_gt']
+
+
+        # data_dict = self.point_feature_encoder.forward(data_dict)
+
         data_dict = self.data_processor.forward(
             data_dict=data_dict
         )
-
-        #if self.training and len(data_dict['gt_boxes']) == 0:
-        #    new_index = np.random.randint(self.__len__())
-        #    return self.__getitem__(new_index)
-
-        #data_dict.pop('gt_names', None)
 
         return data_dict
 
     @staticmethod
     def collate_batch(batch_list, _unused=False):
         data_dict = defaultdict(list)
-        #print("test")
-        #sys.exit()
+        # print("test")
+        # sys.exit()
         for cur_sample in batch_list:
             for key, val in cur_sample.items():
                 data_dict[key].append(val)
         batch_size = len(batch_list)
         ret = {}
-        #data_dict.pop('points_sp', None)
+        # data_dict.pop('points_sp', None)
         data_dict.pop('indices', None)
         data_dict.pop('origins', None)
-        #print(data_dict.keys())
-        #sys.exit()
+        # print(data_dict.keys())
+        # sys.exit()
         for key, val in data_dict.items():
+            # print('collate: ', key)
             try:
                 if key in ['voxels', 'voxel_num_points']:
                     ret[key] = np.concatenate(val, axis=0)
@@ -232,7 +259,7 @@ class DatasetTemplate(torch_data.Dataset):
             except:
                 print('Error in collate_batch: key=%s' % key)
                 raise TypeError
-        #print('vis' in ret.keys())
+        # print('vis' in ret.keys())
         ret['batch_size'] = batch_size
-        
+
         return ret

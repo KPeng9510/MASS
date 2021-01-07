@@ -101,20 +101,22 @@ class PillarVFE(VFETemplate):
         #print(batch_dict["gt_names"].size())
         voxel_features, voxel_num_points, coords = batch_dict['voxels'], batch_dict['voxel_num_points'], batch_dict['voxel_coords']
         #print(voxel_features.size())
-        dense_gt = batch_dict['dense_gt'].permute(0,2,3,1).reshape(2*500*1000,13) # 2, 20, 500, 1000
+        coords = batch_dict['voxel_coords']
+        batch_size = coords[:, 0].max().int().item() + 1
+        # dense_gt = batch_dict['dense_gt'].permute(0,2,3,1).reshape(batch_size*500*1000,13) # 2, 20, 500, 1000
         #print(dense_gt[:1,:])
 
         #sys.exit()
-        weight_5_class = [1,2,3,4]
-        weight_0_class = [0]
-        weight_1_class = [5,6,7,8,9,10,11,12]
-        dense_gt[:,weight_5_class]= dense_gt[:,weight_5_class]*5
-        dense_gt[:,weight_0_class]=dense_gt[:,weight_0_class]*0
-        dense_gt[:,weight_1_class]=dense_gt[:,weight_1_class]*1
-        for i in range(12):
-            dense_gt[:,i]+=0.12-0.01*i
-        #print(debse_gt)
-        dense_gt = torch.argmax(dense_gt,dim=-1)
+        # weight_5_class = [1,2,3,4]
+        # weight_0_class = [0]
+        # weight_1_class = [5,6,7,8,9,10,11,12]
+        # dense_gt[:,weight_5_class]= dense_gt[:,weight_5_class]*5
+        # dense_gt[:,weight_0_class]=dense_gt[:,weight_0_class]*0
+        # dense_gt[:,weight_1_class]=dense_gt[:,weight_1_class]*1
+        # for i in range(12):
+        #     dense_gt[:,i]+=0.12-0.01*i
+        # #print(debse_gt)
+        # dense_gt = torch.argmax(dense_gt,dim=-1)
         #print(dense_gt[:100])
         #print(dense_gt)
         #sys.exit()
@@ -131,7 +133,7 @@ class PillarVFE(VFETemplate):
         """
         #print(batch_dict.keys())
         #sys.exit()
-        v,p,c = voxel_features.size()
+        # v,p,c = voxel_features.size()
         
         """
         for i in range(gt_boxes.size()[0]):
@@ -165,7 +167,7 @@ class PillarVFE(VFETemplate):
         mask = dense_gt_after < dense_gt_min
         dense_gt_after[mask] = dense_gt_max[mask]
         """
-        batch_dict["pillar_dense_gt"] = dense_gt
+        # batch_dict["pillar_dense_gt"] = dense_gt
         """
         encode end for segmentation gt for each pillar
 
@@ -221,9 +223,9 @@ class PillarVFE(VFETemplate):
             features = [voxel_features, f_cluster, f_center]
         else:
             features = [voxel_features[..., 3:], f_cluster, f_center]
-        batch_dict["points_mean"]=center
+        # batch_dict["points_mean"]=center
 
-        batch_dict["points_coor"]=coor
+        # batch_dict["points_coor"]=coor
         if self.with_distance:
             points_dist = torch.norm(voxel_features[:, :, :3], 2, 2, keepdim=True)
             features.append(points_dist)
@@ -238,6 +240,3 @@ class PillarVFE(VFETemplate):
         features = features.squeeze()
         batch_dict['pillar_features'] = features
         return batch_dict
-
-
-            

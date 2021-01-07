@@ -1,6 +1,6 @@
 from functools import partial
-from mapping import mapping
-from voxelize import dense
+# from mapping import mapping
+# from voxelize import dense
 import numpy as np
 import sys
 from ...utils import box_utils, common_utils
@@ -21,13 +21,7 @@ class DataProcessor(object):
         if data_dict is None:
             return partial(self.mask_points_and_boxes_outside_range, config=config)
         mask = common_utils.mask_points_by_range(data_dict['points'], self.point_cloud_range)
-        #print(data_dict['points'].shape)
         data_dict['points'] = data_dict['points'][mask]
-        #if data_dict.get('gt_boxes', None) is not None and config.REMOVE_OUTSIDE_BOXES and self.training:
-        #    mask = box_utils.mask_boxes_outside_range_numpy(
-        #        data_dict['gt_boxes'], self.point_cloud_range, min_num_corners=config.get('min_num_corners', 1)
-        #    )
-        #    data_dict['gt_boxes'] = data_dict['gt_boxes'][mask]
         return data_dict
 
     def shuffle_points(self, data_dict=None, config=None):
@@ -45,9 +39,9 @@ class DataProcessor(object):
     def transform_points_to_voxels(self, data_dict=None, config=None, voxel_generator=None, voxel_generator_2=None):
         if data_dict is None:
             try:
-                from spconv.utils import VoxelGeneratorV2 as VoxelGenerator
+                from .voxel_generator import VoxelGeneratorV2 as VoxelGenerator
             except:
-                from spconv.utils import VoxelGenerator
+                from .voxel_generator import VoxelGenerator
 
             voxel_generator = VoxelGenerator(
                 voxel_size=config.VOXEL_SIZE,
@@ -59,39 +53,22 @@ class DataProcessor(object):
             grid_size = (self.point_cloud_range[3:6] - self.point_cloud_range[0:3]) / np.array(config.VOXEL_SIZE)
             self.grid_size = np.round(grid_size).astype(np.int64)
             self.voxel_size = config.VOXEL_SIZE
-            return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator, voxel_generator_2 = voxel_generator_2)
-        #print(test)
-        #sys.exit()
-        voxel_size = np.array([0.1,0.1,8.0])
+            return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator, voxel_generator_2=voxel_generator_2)
         points = data_dict['points']
-        #points = data_dict['points_sp']
-        #indices = data_dict['indices']
-        #print(points.shape)
-        """
-           add code for visibility
+        voxel_output = voxel_generator.generate(points)
+
+        # add code for visibility
         """
         ori_points = points[:, [0,1,2,4]]
-        #print(points[:,-1])
         voxel_size = self.voxel_size
         pc_range = self.point_cloud_range
-        #print(pc_range)
-        #print(self.voxel_size)
         origins = np.array([[0,0,0]], dtype=np.float32)
         num_points = points.shape[0]
         num_original = num_points
         time_stamps = np.array([-1000,0],dtype=np.float32)
         
-        #time_stamps = points[indices[:-1], -1]  # counting on the fact we do not miss points from any intermediate time_stamps
-        #time_stamps = (time_stamps[:-1]+time_stamps[1:])/2
-        #time_stamps = [-1000.0] + time_stamps.tolist() + [1000.0]  # add boundaries
-        #time_stamps = np.array(time_stamps)
-        #num_original = indices[-1]
         indices =np.array([0],dtype=np.float32)
-        #print(time_stamps)
-        #print(points.shape)
-        #sys.exit()
         if num_points > num_original:
-            #print("this is test sample")
             original_points, sampled_points = ori_points[:num_original,:], ori_points[num_original:,:]
             visibility, original_mask, sampled_mask = mapping.compute_logodds_and_masks(
                 original_points, sampled_points,origins,time_stamps,pc_range,min(voxel_size))
@@ -102,9 +79,9 @@ class DataProcessor(object):
                              ori_points, origins,time_stamps,pc_range,0.1)
         
         #np.set_printoptions(threshold=sys.maxsize)
-        visi_map = np.zeros([1001, 501,3])
+        # visi_map = np.zeros([1001, 501,3])
         visibility = np.int64(visibility)
-        visibility = np.reshape(visibility,(80, 500,1000))[0:80, :, :]
+        visibility = np.reshape(visibility,(20, 500,1000))[0:20, :, :]
         visibility = np.transpose(visibility, (2,1,0))
         #print(visibility)
         #sys.exit()
@@ -119,22 +96,23 @@ class DataProcessor(object):
         #visibility = np.pad(visibility, ((0,2),(0,0)), 'edge')
         data_dict['vis'] = visibility
         #print(data_dict.keys())
-        dense_points = data_dict['dense_point']
+        # dense_points = data_dict['dense_point']
         #print(dense_points[:,-1])
         #sys.exit()
         points = data_dict['points'] 
         #print(pc_range)
         #sys.exit()
         voxel_output = voxel_generator.generate(points)
-        dense_points[:,-1] = np.clip(dense_points[:,-1],0,12)
+        # dense_points[:,-1] = np.clip(dense_points[:,-1],0,12)
         #sys.exit()
-        dense_gt = dense.compute_dense_gt(dense_points, pc_range,voxel_size,13).reshape(13,500,1000)
+        # dense_gt = dense.compute_dense_gt(dense_points, pc_range,voxel_size,13).reshape(13,500,1000)
         #print(dense_gt.size())
         #sys.exit()
         #voxel_dense = voxel_generator.generate(dense_points)
         #print(voxel_dense[...,-1])
         #print(voxel_output['voxels'].shape)
         #sys.exit()
+        """
         if isinstance(voxel_output, dict):
             voxels, coordinates, num_points = \
                 voxel_output['voxels'], voxel_output['coordinates'], voxel_output['num_points_per_voxel']
@@ -143,7 +121,7 @@ class DataProcessor(object):
 
         #if not data_dict['use_lead_xyz']:
         #    voxels = voxels[..., 3:]  # remove xyz in voxels(N, 3)
-        data_dict['dense_gt'] = dense_gt
+        # data_dict['dense_gt'] = dense_gt
         #data_dict['dense_pillar_coords'] = voxel_dense['coordinates']
         data_dict['voxels'] = voxels
         data_dict['voxel_coords'] = coordinates
@@ -198,7 +176,4 @@ class DataProcessor(object):
 
         for cur_processor in self.data_processor_queue:
             data_dict = cur_processor(data_dict=data_dict)
-        #print(2)
-        #sys.exit()
         return data_dict
-	

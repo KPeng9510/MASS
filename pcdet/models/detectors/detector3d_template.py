@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 
 from ...ops.iou3d_nms import iou3d_nms_utils
-from .. import backbones_2d, backbones_3d, dense_heads, roi_heads
+from .. import backbones_2d, dense_heads
 from ..backbones_2d import map_to_bev
-from ..backbones_3d import pfe, vfe
+from ..backbones_3d import vfe
 from ..model_utils import model_nms_utils
 
 
@@ -20,8 +20,8 @@ class Detector3DTemplate(nn.Module):
         self.register_buffer('global_step', torch.LongTensor(1).zero_())
 
         self.module_topology = [
-            'vfe', 'backbone_3d', 'map_to_bev_module', 'pfe',
-            'backbone_2d', 'dense_head',  'point_head', 'roi_head'
+            'vfe', 'map_to_bev_module',
+            'backbone_2d', 'dense_head'
         ]
 
     @property
@@ -145,18 +145,6 @@ class Detector3DTemplate(nn.Module):
             input_channels=num_point_features,
             num_class=self.num_class if not self.model_cfg.POINT_HEAD.CLASS_AGNOSTIC else 1,
             predict_boxes_when_training=self.model_cfg.get('ROI_HEAD', False)
-        )
-
-        model_info_dict['module_list'].append(point_head_module)
-        return point_head_module, model_info_dict
-
-    def build_roi_head(self, model_info_dict):
-        if self.model_cfg.get('ROI_HEAD', None) is None:
-            return None, model_info_dict
-        point_head_module = roi_heads.__all__[self.model_cfg.ROI_HEAD.NAME](
-            model_cfg=self.model_cfg.ROI_HEAD,
-            input_channels=model_info_dict['num_point_features'],
-            num_class=self.num_class if not self.model_cfg.ROI_HEAD.CLASS_AGNOSTIC else 1,
         )
 
         model_info_dict['module_list'].append(point_head_module)

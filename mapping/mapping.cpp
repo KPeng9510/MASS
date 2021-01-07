@@ -47,7 +47,7 @@ inline bool _voxel_traversal(std::vector<Eigen::Vector3i> & visited_voxels,
     // the implicit int-casting will round up for negative numbers.
     Eigen::Vector3i current_voxel(floor(ray_start[0]/voxel_size),
                                   floor(ray_start[1]/voxel_size),
-                                  floor(ray_start[2]/voxel_size));
+                                  floor(ray_start[2]/(voxel_size*2)));
 
     // create aliases for indices of the current voxel
     int &vx = current_voxel[0], &vy = current_voxel[1], &vz = current_voxel[2];
@@ -59,7 +59,7 @@ inline bool _voxel_traversal(std::vector<Eigen::Vector3i> & visited_voxels,
     // TODO: what happens if the end point is on a border?
     Eigen::Vector3i last_voxel(floor(ray_end[0]/voxel_size),
                                floor(ray_end[1]/voxel_size),
-                               floor(ray_end[2]/voxel_size));
+                               floor(ray_end[2]/(voxel_size*2)));
 
     // In which direction the voxel ids are incremented.
     int stepX = (ray[0] >= 0) ? 1:-1; // correct
@@ -69,7 +69,7 @@ inline bool _voxel_traversal(std::vector<Eigen::Vector3i> & visited_voxels,
     // Distance along the ray to the next voxel border from the current position (tMaxX, tMaxY, tMaxZ).
     double next_voxel_boundary_x = (vx+stepX)*voxel_size; // correct
     double next_voxel_boundary_y = (vy+stepY)*voxel_size; // correct
-    double next_voxel_boundary_z = (vz+stepZ)*voxel_size; // correct
+    double next_voxel_boundary_z = (vz+stepZ)*(voxel_size*2); // correct
 
     // tMaxX, tMaxY, tMaxZ -- distance until next intersection with voxel-border
     // the value of t at which the ray crosses the first vertical voxel boundary
@@ -83,7 +83,7 @@ inline bool _voxel_traversal(std::vector<Eigen::Vector3i> & visited_voxels,
     // can only be FLT_MAX if we never go in that direction
     double tDeltaX = (ray[0]!=0) ? voxel_size/ray[0]*stepX : DBL_MAX;
     double tDeltaY = (ray[1]!=0) ? voxel_size/ray[1]*stepY : DBL_MAX;
-    double tDeltaZ = (ray[2]!=0) ? voxel_size/ray[2]*stepZ : DBL_MAX;
+    double tDeltaZ = (ray[2]!=0) ? (voxel_size*2)/ray[2]*stepZ : DBL_MAX;
 
     // Note: I am not sure why there is a need to do this, but I am keeping it for now
     // possibly explained by: https://github.com/francisengelmann/fast_voxel_traversal/issues/6
@@ -152,7 +152,7 @@ std::tuple<Eigen::VectorXsc, Eigen::VectorXb, Eigen::VectorXb> _compute_visibili
     //
     const int vxsize = (pxmax - pxmin) / voxel_size;
     const int vysize = (pymax - pymin) / voxel_size;
-    const int vzsize = (pzmax - pzmin) / voxel_size;
+    const int vzsize = (pzmax - pzmin) / (voxel_size*2);
     const Eigen::Vector3i grid_size(vxsize, vysize, vzsize);
 
     //
@@ -234,7 +234,7 @@ std::tuple<Eigen::VectorXsc, Eigen::VectorXb, Eigen::VectorXb> _compute_visibili
         for (const int & i : sampled_indices[t]) {
             const int vx = floor((sampled_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((sampled_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((sampled_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((sampled_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int vidx = vz * G2 + vy * G1 + vx;
                 sampled_occupied_voxel_mask[vidx] = true;
@@ -271,7 +271,7 @@ std::tuple<Eigen::VectorXsc, Eigen::VectorXb, Eigen::VectorXb> _compute_visibili
         for (const int & i : original_indices[t]) {
             const int vx = floor((original_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((original_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((original_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((original_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int vidx = vz * G2 + vy * G1 + vx;
                 original_occupied_voxel_mask[vidx] = true;
@@ -307,7 +307,7 @@ std::tuple<Eigen::VectorXsc, Eigen::VectorXb, Eigen::VectorXb> _compute_visibili
         for (const int & i : original_indices[t]) {
             const int vx = floor((original_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((original_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((original_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((original_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int midx = t * G3 + vz * G2 + vy * G1 + vx;
                 original_visible_point_mask[i] = (visibility[midx] == OCCUPIED);
@@ -318,7 +318,7 @@ std::tuple<Eigen::VectorXsc, Eigen::VectorXb, Eigen::VectorXb> _compute_visibili
         for (const int & i : sampled_indices[t]) {
             const int vx = floor((sampled_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((sampled_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((sampled_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((sampled_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int midx = t * G3 + vz * G2 + vy * G1 + vx;
                 sampled_visible_point_mask[i] = (visibility[midx] == OCCUPIED);
@@ -348,7 +348,7 @@ Eigen::VectorXsc _compute_visibility(const Eigen::MatrixXf & original_points,
     //
     const int vxsize = (pxmax - pxmin) / voxel_size;
     const int vysize = (pymax - pymin) / voxel_size;
-    const int vzsize = (pzmax - pzmin) / voxel_size;
+    const int vzsize = (pzmax - pzmin) / (voxel_size*2);
     const Eigen::Vector3i grid_size(vxsize, vysize, vzsize);
 
     //
@@ -436,7 +436,7 @@ std::tuple<Eigen::VectorXf, Eigen::VectorXb, Eigen::VectorXb> _compute_logodds_a
     //
     const int vxsize = (pxmax - pxmin) / voxel_size;
     const int vysize = (pymax - pymin) / voxel_size;
-    const int vzsize = (pzmax - pzmin) / voxel_size;
+    const int vzsize = (pzmax - pzmin) / (voxel_size*2);
     const Eigen::Vector3i grid_size(vxsize, vysize, vzsize);
 
     //
@@ -514,7 +514,7 @@ std::tuple<Eigen::VectorXf, Eigen::VectorXb, Eigen::VectorXb> _compute_logodds_a
         for (const int & i : sampled_indices[t]) {
             const int vx = floor((sampled_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((sampled_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((sampled_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((sampled_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int vidx = vz * G2 + vy * G1 + vx;
                 sampled_occupied_voxel_mask[vidx] = true;
@@ -550,7 +550,7 @@ std::tuple<Eigen::VectorXf, Eigen::VectorXb, Eigen::VectorXb> _compute_logodds_a
         for (const int & i : original_indices[t]) {
             const int vx = floor((original_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((original_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((original_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((original_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int vidx = vz * G2 + vy * G1 + vx;
                 original_occupied_voxel_mask[vidx] = true;
@@ -585,7 +585,7 @@ std::tuple<Eigen::VectorXf, Eigen::VectorXb, Eigen::VectorXb> _compute_logodds_a
         for (const int & i : original_indices[t]) {
             const int vx = floor((original_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((original_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((original_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((original_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int vidx = vz * G2 + vy * G1 + vx;
                 original_visible_point_mask[i] = (update[vidx] > 0);
@@ -596,7 +596,7 @@ std::tuple<Eigen::VectorXf, Eigen::VectorXb, Eigen::VectorXb> _compute_logodds_a
         for (const int & i : sampled_indices[t]) {
             const int vx = floor((sampled_points(i,0) - pxmin) / voxel_size);
             const int vy = floor((sampled_points(i,1) - pymin) / voxel_size);
-            const int vz = floor((sampled_points(i,2) - pzmin) / voxel_size);
+            const int vz = floor((sampled_points(i,2) - pzmin) / (voxel_size*2));
             if (0 <= vz && vz < vzsize && 0 <= vy && vy < vysize && 0 <= vx && vx < vxsize) {
                 const int vidx = vz * G2 + vy * G1 + vx;
                 sampled_visible_point_mask[i] = (update[vidx] > 0);
@@ -633,7 +633,7 @@ Eigen::VectorXf _compute_logodds(const Eigen::MatrixXf & original_points,
     //
     const int vxsize = (pxmax - pxmin) / voxel_size;
     const int vysize = (pymax - pymin) / voxel_size;
-    const int vzsize = (pzmax - pzmin) / voxel_size;
+    const int vzsize = (pzmax - pzmin) / (voxel_size*2);
     const Eigen::Vector3i grid_size(vxsize, vysize, vzsize);
 
     //

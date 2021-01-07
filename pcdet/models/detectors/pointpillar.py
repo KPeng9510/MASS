@@ -1,5 +1,5 @@
 from .detector3d_template import Detector3DTemplate
-from .unet.unet import UNet
+from .unet.unet import UNet, SimplifiedUNet
 from .segmentation_head import FCNMaskHead
 import sys
 from .erfnet import Net
@@ -10,6 +10,8 @@ import torch
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
 from PIL import Image
 import numpy as np
+
+
 class FocalLoss(nn.Module):
     """
     copy from: https://github.com/Hsuxu/Loss_ToolBox-PyTorch/blob/master/FocalLoss/FocalLoss.py
@@ -67,7 +69,7 @@ class FocalLoss(nn.Module):
 
         else:
             raise TypeError('Not support alpha type')
-        
+
         if alpha.device != logit.device:
             alpha = alpha.to(logit.device)
 
@@ -80,7 +82,7 @@ class FocalLoss(nn.Module):
 
         if self.smooth:
             one_hot_key = torch.clamp(
-                one_hot_key, self.smooth/(num_class-1), 1.0 - self.smooth)
+                one_hot_key, self.smooth / (num_class - 1), 1.0 - self.smooth)
         pt = (one_hot_key * logit).sum(1) + self.smooth
         logpt = pt.log()
 
@@ -95,6 +97,8 @@ class FocalLoss(nn.Module):
         else:
             loss = loss.sum()
         return loss
+
+
 def one_hot(labels, num_classes):
     '''
     Converts an integer label torch.autograd.Variable to a one-hot Variable.
@@ -110,75 +114,80 @@ def one_hot(labels, num_classes):
         N x C x H x W, where C is class number. One-hot encoded.
     '''
     one_hot = torch.cuda.FloatTensor(labels.size()[0], num_classes, labels.size()[2], labels.size()[3]).zero_()
-    target = one_hot.scatter_(1, labels.data, 1) 
+    target = one_hot.scatter_(1, labels.data, 1)
     return target
+
+
 def one_hot_1d(data, num_classes):
-     n_values = num_classes
-     n_values = torch.eye(n_values)[data]
-     return n_values
+    n_values = num_classes
+    n_values = torch.eye(n_values)[data]
+    return n_values
+
 
 class PointPillar(Detector3DTemplate):
     def __init__(self, model_cfg, num_class, dataset):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
-        self.segmentation_head = UNet(64,13)
+        # self.segmentation_head = UNet(64, 12)
+        self.segmentation_head = SimplifiedUNet(64, 12)
         self.focal_loss = FocalLoss()
+
     def forward(self, batch_dict):
         module_index = 0
-        
+
         for cur_module in self.module_list[:2]:
             module_index += 1
             batch_dict = cur_module(batch_dict)
             if module_index == 2:
-
-                points_mean = batch_dict["points_coor"]
+                # points_mean = batch_dict["points_coor"]
                 dict_seg = []
                 dict_cls_num = []
                 label_b = batch_dict["labels_seg"]
 
-                batch,c,h,w =label_b.size()
-                targets_crr = label_b.view(batch,c,h,w)#torch.cat(dict_seg,dim=0).view(batch,c,h,w)
+                # batch, c, h, w = label_b.size()
+                # targets_crr = label_b.view(batch, c, h, w)  # torch.cat(dict_seg,dim=0).view(batch,c,h,w)
+                targets_crr = label_b
                 spatial_features = batch_dict["spatial_features"]
                 pred = self.segmentation_head(spatial_features)
-                
-                label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
-                #f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
-                #f.write(label)
-                #f.close()
-                #sys.exit()
 
-                targets_crr = targets_crr.contiguous().view(batch,c,h,w)
-                
+                # label = torch.argmax(pred[0].unsqueeze(0),dim=1).flatten().cpu().numpy().astype(np.float32).tobytes()
+                # f=open("/mrtstorage/users/kpeng/labe.bin",'wb')
+                # f.write(label)
+                # f.close()
+                # sys.exit()
+
+                # targets_crr = targets_crr.contiguous().view(batch, c, h, w)
+
                 nozero_mask = targets_crr != 0
-                targets_crr = torch.clamp(targets_crr[nozero_mask],1,13)
-                #ori_target = targets_crr
-                targets_crr = one_hot_1d((targets_crr-1).long(), 13).unsqueeze(0).permute(0,2,1).cuda()
-                pred = pred.permute(0,2,3,1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0,2,1)
-                object_list = [0,2,3]
-                #for obj in object_list:
+                targets_crr = torch.clamp(targets_crr[nozero_mask], 1, 12)
+                # ori_target = targets_crr
+                targets_crr = one_hot_1d((targets_crr - 1).long(), 12).unsqueeze(0).permute(0, 2, 1).cuda()
+                pred = pred.permute(0, 2, 3, 1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0, 2, 1)
+                object_list = [0, 2, 3]
+                # for obj in object_list:
                 #    if obj == 1:
                 #        mask_obj = ori_target == obj
                 #    else:
                 #        mask_obj = mask_obj | (targets_crr == obj)
                 weight = torch.ones_like(targets_crr)
-                #print(weight.size())
-                #sys.exit()
-                #mask_person = targets_crr == 1
-                #weight[mask_obj]==5
-                #weight[mask_person]==8
-                weight[:,[0,2,3],:]=5 # weight 5 for other dynamic object
-                weight[:,1,:]=8 # weight8 for pedestrain
-                loss_seg = F.binary_cross_entropy_with_logits(pred,targets_crr,reduction='mean',weight=weight)
+                # print(weight.size())
+                # sys.exit()
+                # mask_person = targets_crr == 1
+                # weight[mask_obj]==5
+                # weight[mask_person]==8
+                weight[:, [0, 2, 3], :] = 5  # weight 5 for other dynamic object
+                weight[:, 1, :] = 8  # weight8 for pedestrain
+                loss_seg = F.binary_cross_entropy_with_logits(pred, targets_crr, reduction='mean', weight=weight)
         """
            code for geomertic consistency
         """
         if self.training:
-            
+
             ret_dict = {
                 'loss': loss_seg
             }
-            disp_dict={}
-            tb_dict={}
+            disp_dict = {}
+            tb_dict = {}
             return ret_dict, tb_dict, disp_dict
         else:
             pred_dicts, recall_dicts = self.post_processing(batch_dict)

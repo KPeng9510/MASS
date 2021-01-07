@@ -43,40 +43,69 @@ class DataAugmentor(object):
     def random_world_flip(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.random_world_flip, config=config)
-        gt_boxes, points = data_dict['gt_boxes'], data_dict['points']
+        gt_seg, points = data_dict['labels_seg'], data_dict['points']
+        observations = data_dict.get('observations', None)
         for cur_axis in config['ALONG_AXIS_LIST']:
             assert cur_axis in ['x', 'y']
-            gt_boxes, points = getattr(augmentor_utils, 'random_flip_along_%s' % cur_axis)(
-                gt_boxes, points,
+            gt_seg, points, observations = getattr(augmentor_utils, 'random_flip_along_%s' % cur_axis)(
+                gt_seg, points, observations
             )
 
-        data_dict['gt_boxes'] = gt_boxes
+        data_dict['labels_seg'] = gt_seg
         data_dict['points'] = points
+        if observations is not None:
+            data_dict['observations'] = observations
         return data_dict
 
     def random_world_rotation(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.random_world_rotation, config=config)
         rot_range = config['WORLD_ROT_ANGLE']
+        observations = data_dict.get('observations', None)
         if not isinstance(rot_range, list):
             rot_range = [-rot_range, rot_range]
-        gt_boxes, points = augmentor_utils.global_rotation(
-            data_dict['gt_boxes'], data_dict['points'], rot_range=rot_range
+        gt_seg, points, observations = augmentor_utils.global_rotation(
+            data_dict['labels_seg'], data_dict['points'], observations, rot_range=rot_range
         )
 
-        data_dict['gt_boxes'] = gt_boxes
+        data_dict['labels_seg'] = gt_seg
         data_dict['points'] = points
+
+        if observations is not None:
+            data_dict['observations'] = observations
+
         return data_dict
 
     def random_world_scaling(self, data_dict=None, config=None):
         if data_dict is None:
             return partial(self.random_world_scaling, config=config)
-        gt_boxes, points = augmentor_utils.global_scaling(
-            data_dict['gt_boxes'], data_dict['points'], config['WORLD_SCALE_RANGE']
+        observations = data_dict.get('observations', None)
+        gt_seg, points, observations = augmentor_utils.global_scaling(
+            data_dict['labels_seg'], data_dict['points'], observations, config['WORLD_SCALE_RANGE']
         )
-        data_dict['gt_boxes'] = gt_boxes
+        data_dict['labels_seg'] = gt_seg
         data_dict['points'] = points
+
+        if observations is not None:
+            data_dict['observations'] = observations
+
         return data_dict
+
+    def random_world_translation(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.random_world_translation, config=config)
+        observations = data_dict.get('observations', None)
+        gt_seg, points, observations = augmentor_utils.global_translate(
+            data_dict['labels_seg'], data_dict['points'], observations, config['WORLD_TRANSLATE_RANGE']
+        )
+        data_dict['labels_seg'] = gt_seg
+        data_dict['points'] = points
+
+        if observations is not None:
+            data_dict['observations'] = observations
+
+        return data_dict
+
 
     def forward(self, data_dict):
         """
@@ -92,16 +121,16 @@ class DataAugmentor(object):
         for cur_augmentor in self.data_augmentor_queue:
             data_dict = cur_augmentor(data_dict=data_dict)
 
-        data_dict['gt_boxes'][:, 6] = common_utils.limit_period(
-            data_dict['gt_boxes'][:, 6], offset=0.5, period=2 * np.pi
-        )
-        if 'calib' in data_dict:
-            data_dict.pop('calib')
-        if 'road_plane' in data_dict:
-            data_dict.pop('road_plane')
-        if 'gt_boxes_mask' in data_dict:
-            gt_boxes_mask = data_dict['gt_boxes_mask']
-            data_dict['gt_boxes'] = data_dict['gt_boxes'][gt_boxes_mask]
-            data_dict['gt_names'] = data_dict['gt_names'][gt_boxes_mask]
-            data_dict.pop('gt_boxes_mask')
+        # data_dict['gt_boxes'][:, 6] = common_utils.limit_period(
+        #     data_dict['gt_boxes'][:, 6], offset=0.5, period=2 * np.pi
+        # )
+        # if 'calib' in data_dict:
+        #     data_dict.pop('calib')
+        # if 'road_plane' in data_dict:
+        #     data_dict.pop('road_plane')
+        # if 'gt_boxes_mask' in data_dict:
+        #     gt_boxes_mask = data_dict['gt_boxes_mask']
+        #     data_dict['gt_boxes'] = data_dict['gt_boxes'][gt_boxes_mask]
+        #     data_dict['gt_names'] = data_dict['gt_names'][gt_boxes_mask]
+        #     data_dict.pop('gt_boxes_mask')
         return data_dict
