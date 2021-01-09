@@ -59,27 +59,24 @@ class DatasetTemplate(torch_data.Dataset):
 
         if training == True:
             self.split = "train"
+            sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
+            file_name = "/home/ki/input/kitti/semantickitti/dataset/sample.pkl"
         else:
             self.split = "test"
-        self.files_seq = []
-        # for index in sequence_num:
-        # self.files_seq.extend(recursive_glob(rootdir=str(self.root / 'sequences'), suffix=".bin"))
-        # print(self.files_seq)
-        # self.files = functools.reduce(operator.iconcat, self.files_seq, [])
-        split = "train"
-        if split == "train":
-            sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
-        else:
             sequence = ["08"]
-        # file_list = []
-        # for idx, scene in enumerate(sequence):
-        #    self.files_seq.extend(recursive_glob(self.root+scene+'/', suffix=".bin"))
-        file_name = "/home/ki/input/kitti/semantickitti/dataset/sample.pkl"
+            file_name = "/home/ki/input/kitti/semantickitti/dataset/val_sample.pkl"
 
+        self.files_seq = []
+        # comment it out when generate sample file
+        # for idx, scene in enumerate(sequence):
+        #     self.files_seq.extend(recursive_glob(str(self.root) + '/sequences/' + scene + '/', suffix=".bin"))
+        # print(self.files_seq)
         # open_file = open(file_name, "wb")
         # pickle.dump(self.files_seq, open_file)
         # open_file.close()
         # sys.exit()
+        # end
+
         open_file = open(file_name, "rb")
         self.files_seq = pickle.load(open_file)
         open_file.close()
@@ -133,6 +130,16 @@ class DatasetTemplate(torch_data.Dataset):
         assert f_file.exists()
         return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
+    def get_grid_dense_gt_img(self, seq, index):
+        f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/learning_semantic_grid_dense/%015d.png' % int(index))
+        assert f_file.exists()
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(501, 1001, 1)
+
+    def get_sparse_gt_img(self, seq, index):
+        f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/learning_semantic_grid_sparse/%015d.png' % int(index))
+        assert f_file.exists()
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(501, 1001, 1)
+
     def get_obser_img(self, seq, index):
         f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/observations/%015d.png' % int(index))
         assert f_file.exists()
@@ -155,6 +162,8 @@ class DatasetTemplate(torch_data.Dataset):
         """
         data_dict = {}
         point_path = Path(self.files_seq[index].rstrip())
+        if not point_path.exists():
+            print(str(point_path))
         # print(point_path)
         points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
@@ -166,8 +175,27 @@ class DatasetTemplate(torch_data.Dataset):
         seq = str(point_path).split('/')[-3]
         idx = point_path.stem
 
-        dense_gt = self.get_dense_gt_bin(seq, idx)
-        data_dict['labels_seg'] = dense_gt
+        data_dict['frame_id'] = seq+idx
+
+        # TODO dense gt
+        # seg_gt = self.get_dense_gt_bin(seq, idx)
+        seg_gt = self.get_dense_gt_img(seq, idx)
+
+        # get grid dense gt
+        # seg_gt = self.get_grid_dense_gt_img(seq, idx)[:500, :1000, :]
+        # remapping from franks if to pengs
+        # seg_gt = seg_gt + 1
+        # bkgd_mask = seg_gt == 31
+        # seg_gt[bkgd_mask] = 0
+
+        # sparse gt
+        # seg_gt = self.get_sparse_gt_img(seq, idx)[:500, :1000, :]
+        # remapping from franks if to pengs
+        # seg_gt = seg_gt + 1
+        # bkgd_mask = seg_gt == 31
+        # seg_gt[bkgd_mask] = 0
+
+        data_dict['labels_seg'] = seg_gt
 
 
         # load observations
@@ -177,8 +205,8 @@ class DatasetTemplate(torch_data.Dataset):
 
         data_dict = self.prepare_data(data_dict)
 
-        dense_gt = np.transpose(data_dict['labels_seg'], (2, 0, 1))  # 1, 500, 1000
-        data_dict['labels_seg'] = dense_gt
+        seg_gt = np.transpose(data_dict['labels_seg'], (2, 0, 1))  # 1, 500, 1000
+        data_dict['labels_seg'] = seg_gt
 
         obser = np.transpose(data_dict['observations'], (2, 0, 1))
         data_dict['observations'] = obser / 255  # normalization
@@ -219,6 +247,11 @@ class DatasetTemplate(torch_data.Dataset):
         data_dict = self.data_processor.forward(
             data_dict=data_dict
         )
+
+        if self.training and len(data_dict['voxel_coords']) == 0:
+            new_index = np.random.randint(self.__len__())
+            print('Error frame id: ', data_dict['frame_id'])
+            return self.__getitem__(new_index)
 
         return data_dict
 

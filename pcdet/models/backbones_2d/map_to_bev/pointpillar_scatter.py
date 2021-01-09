@@ -58,6 +58,7 @@ class PointPillarScatter(nn.Module):
 
     def forward(self, batch_dict, **kwargs):
         pillar_features, coords = batch_dict['pillar_features'], batch_dict['voxel_coords']
+        # print(coords.shape)
         # pillar_seg = batch_dict["pillar_seg_gt"]
         batch_size = coords[:, 0].max().int().item() + 1
         # dense_seg = batch_dict["labels_seg"].resize(batch_size,1,500,1000)
@@ -131,7 +132,7 @@ class PointPillarScatter(nn.Module):
         """
         batch_spatial_features = batch_spatial_features.view(batch_size, self.num_bev_features * self.nz, self.ny,
                                                              self.nx)
-        observations = batch_dict['observations']
+        observations = batch_dict['observations'].contiguous().view(batch_size, 1, self.ny, self.nx)
         observations = self.conv_obser(observations)
 
         # Attentional fusion module

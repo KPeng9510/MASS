@@ -17,7 +17,7 @@ import cv2
 from pathlib import Path
 
 def label_generator():
-    file_name = "/home/ki/input/kitti/semantickitti/dataset/sample.pkl"
+    file_name = "/home/ki/input/kitti/semantickitti/dataset/val_sample.pkl"
     save_path = "/home/ki/input/kitti/semantickitti/dataset/pillarseg/gt_dense_bin/"
     img_save_path = "/home/ki/input/kitti/semantickitti/dataset/pillarseg/gt_dense_image/"
     open_file = open(file_name, "rb")

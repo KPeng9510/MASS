@@ -113,9 +113,12 @@ def global_translate(gt_seg, points, observations, noise_translate_std):
     if not isinstance(noise_translate_std, (list, tuple, np.ndarray)):
         noise_translate_std = np.array([noise_translate_std, noise_translate_std, noise_translate_std])
 
-    noise_translate = np.array([np.random.normal(0, noise_translate_std[0], 1),
-                                np.random.normal(0, noise_translate_std[1], 1),
-                                np.random.normal(0, noise_translate_std[2], 1)]).T  # 1 3
+    std_x, std_y, std_z = noise_translate_std
+    noise_translate = np.array([np.random.normal(0, std_x, 1),
+                                np.random.normal(0, std_y, 1),
+                                np.random.normal(0, std_z, 1)]).T  # 1 3
+    # clip to 3*std
+    noise_translate = np.clip(noise_translate, [-3.0*std_x, -3.0*std_y, -3.0*std_z], [3.0*std_x, 3.0*std_y, 3.0*std_z])
     points[:, :3] += noise_translate
 
     dw = noise_translate[0, 0] // 0.1
