@@ -129,7 +129,10 @@ class PointPillar(Detector3DTemplate):
         super().__init__(model_cfg=model_cfg, num_class=num_class, dataset=dataset)
         self.module_list = self.build_networks()
         # self.segmentation_head = UNet(64, 12)
-        self.segmentation_head = SimplifiedUNet(64, 12)
+        # for attentional fusion
+        # self.segmentation_head = SimplifiedUNet(64, 12)
+        # for concat fusion
+        self.segmentation_head = SimplifiedUNet(128, 12)
         self.focal_loss = FocalLoss()
 
     def forward(self, batch_dict):

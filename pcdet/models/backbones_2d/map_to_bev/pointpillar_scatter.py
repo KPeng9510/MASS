@@ -37,22 +37,16 @@ class PointPillarScatter(nn.Module):
             nn.ReLU()
         )
 
-        self.w_pillar = nn.Sequential(
-            nn.Conv2d(64, 1, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(1, eps=1e-3, momentum=0.01),
-        )
+        # self.w_pillar = nn.Sequential(
+        #     nn.Conv2d(64, 1, kernel_size=3, padding=1, bias=False),
+        #     nn.BatchNorm2d(1, eps=1e-3, momentum=0.01),
+        # )
 
-        self.w_obser = nn.Sequential(
-            nn.Conv2d(64, 1, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(1, eps=1e-3, momentum=0.01),
-        )
+        # self.w_obser = nn.Sequential(
+        #     nn.Conv2d(64, 1, kernel_size=3, padding=1, bias=False),
+        #     nn.BatchNorm2d(1, eps=1e-3, momentum=0.01),
+        # )
 
-        # self.conv_pillar = nn.Conv2d(64, 1, kernel_size=3, stride=1, padding=1, bias=False)
-        # self.conv_visi = nn.Conv2d(20, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        # self.conv_visi_2 = nn.Conv2d(64, 1, kernel_size=3, stride=1, padding=1, bias=False)
-        # self.relu = nn.ReLU()
-        # self.zp = nn.ZeroPad2d(1)
-        # self.softmax = nn.Softmax(dim=-1)
         assert self.nz == 1
         # self.num = 0
 
@@ -136,11 +130,13 @@ class PointPillarScatter(nn.Module):
         observations = self.conv_obser(observations)
 
         # Attentional fusion module
-        weight_pillar = self.w_pillar(batch_spatial_features)
-        weight_obser = self.w_obser(observations)
-        weight = torch.softmax(torch.cat([weight_pillar, weight_obser], dim=1), dim=1)
+        # weight_pillar = self.w_pillar(batch_spatial_features)
+        # weight_obser = self.w_obser(observations)
+        # weight = torch.softmax(torch.cat([weight_pillar, weight_obser], dim=1), dim=1)
+        # batch_spatial_features = batch_spatial_features * weight[:, 0:1, :, :] + observations * weight[:, 1:, :, :]
 
-        batch_spatial_features = batch_spatial_features * weight[:, 0:1, :, :] + observations * weight[:, 1:, :, :]
+        # concat fusion module
+        batch_spatial_features = torch.cat([batch_spatial_features, observations], dim=1)
 
         batch_dict['spatial_features'] = batch_spatial_features.contiguous()
 

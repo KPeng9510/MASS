@@ -55,43 +55,35 @@ def get_iou(pred, gt, number, intersect, union, index, logger, result_dir, time_
         gt_tmp = gt[i]
         for j in range(n_classes):
             match = (pred_tmp == j).int() + (gt_tmp == j).int()
-
             it = torch.sum(match == 2).item()
             un = torch.sum(match > 0).item()
-            # it_list[j]+=it
-            # un_list[]
             intersect[j] += it
             union[j] += un
 
-        iou = []
-        # unique_label = #np.unique(gt_tmp.data.cpu().numpy())
-        zero_count = 0
-        class_list = []
-
-    # file = open(result_dir+"/log_eval_step_50_"+timestamp+".txt", 'a')
-
-    if (number % 50) | (number == index) == 0:
-        file = open(result_dir / ("eval_" + time_stamp + ".txt"), 'a')
-        for k in range(len(intersect)):
-            if union[k] != 0:
-                class_list.append(class_name[k])
-                iou.append(intersect[k] / union[k])
-            else:
-                continue
-        miou = ((sum(iou)) / (len(iou)))
-        iou = torch.Tensor(iou)
-        file.write("******************eval_%f******************\n" % number)
-        print("*******************eval_result**********************:\n")
-        for j, class_index in enumerate(class_list):
-            logger.info('iou_%s: %f' % (class_index, iou[j]))
-            file.write('iou_%s: %f' % (class_index, iou[j]) + '\n')
-        logger.info('miou: %f' % (miou))
-        file.write('miou: %f' % (miou) + '\n')
-        file.write("****************************************************\n")
-        print("****************************************************")
-        # file.write("******************eval_%f******************"%number)
-        # file.write()
-        file.close()
+    # iou = []
+    # class_list = []
+    # if (number % 50) | (number == index) == 0:
+    #     file = open(result_dir / ("eval_" + time_stamp + ".txt"), 'a')
+    #     for k in range(len(intersect)):
+    #         if union[k] != 0:
+    #             class_list.append(class_name[k])
+    #             iou.append(intersect[k] / union[k])
+    #         else:
+    #             continue
+    #     miou = ((sum(iou)) / (len(iou)))
+    #     iou = torch.Tensor(iou)
+    #     file.write("******************eval_%f******************\n" % number)
+    #     print("*******************eval_result**********************:\n")
+    #     for j, class_index in enumerate(class_list):
+    #         logger.info('iou_%s: %f' % (class_index, iou[j]))
+    #         file.write('iou_%s: %f' % (class_index, iou[j]) + '\n')
+    #     logger.info('miou: %f' % (miou))
+    #     file.write('miou: %f' % (miou) + '\n')
+    #     file.write("****************************************************\n")
+    #     print("****************************************************")
+    #     # file.write("******************eval_%f******************"%number)
+    #     # file.write()
+    #     file.close()
     return intersect, union
 
 
@@ -126,7 +118,7 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
     model.eval()
     start_time = time.time()
     n_val = len(dataloader)
-    with tqdm.tqdm(total=n_val, desc='Validation round', unit='batch', leave=False) as pbar:
+    with tqdm.tqdm(total=n_val, desc='Val', unit='batch', leave=False) as pbar:
         intersection = torch.zeros(12)
         union = torch.zeros(12)
         for i, batch_dict in enumerate(dataloader):
@@ -149,27 +141,24 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
             pred = pred_dict["prediction"][:, :12, :, :]
             pred = torch.argmax(pred, dim=1, keepdim=True)  # 2 1 500 1000
 
-
-
             no_obser_mask = observation <= 0
             pred[no_obser_mask] = -1
             # save pred as img
             prediction_save_path = result_dir / "eval_segmentation/"
             prediction_save_path.mkdir(parents=True, exist_ok=True)
-            for batch_index in range(batch_size):
-                img_path = prediction_save_path / ('%06d.png' % int(i * batch_size + batch_index))
-                cls_id = pred[batch_index].cpu().numpy().astype(np.uint8)
-                cls_id = np.transpose(cls_id, (1, 2, 0))
-                rgb = id_to_rgb(cls_id)
-                rgb = Image.fromarray(rgb)
-                rgb.save(str(img_path))
+            # for batch_index in range(batch_size):
+            #     img_path = prediction_save_path / ('%06d.png' % int(i * batch_size + batch_index))
+            #     cls_id = pred[batch_index].cpu().numpy().astype(np.uint8)
+            #     cls_id = np.transpose(cls_id, (1, 2, 0))
+            #     rgb = id_to_rgb(cls_id)
+            #     rgb = Image.fromarray(rgb)
+            #     rgb.save(str(img_path))
 
             no_gt_mask = dense_gt.view(batch_size, 1, h, w) == 0
             pred[no_gt_mask] = -1
 
             dense_gt[no_obser_mask] = 0
             dense_gt = dense_gt - 1  # from -1 to 11
-
 
             prediction_save_path = result_dir / "eval_segmentation/"
             prediction_save_path.mkdir(parents=True, exist_ok=True)
@@ -191,10 +180,11 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
 
         class_list = []
         iou = []
+        ret_dict = {}
         class_name = ["vehicle", "person", "two-wheel", "rider", "road", "sidewalk", "otherground", "building",
                       "object", "vegetation", "trunk", "terrain"]
 
-        file = open(result_dir / ("eval_" + timestamp + ".txt"), 'a')
+        file = open(result_dir / ("eval_%s.txt" % epoch_id), 'a')
         for k in range(len(intersection)):
             if union[k] != 0:
                 class_list.append(class_name[k])
@@ -208,23 +198,16 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
         for j, class_index in enumerate(class_list):
             logger.info('iou_%s: %f' % (class_index, iou[j]))
             file.write('iou_%s: %f' % (class_index, iou[j]) + '\n')
+            ret_dict['iou_%s' % class_index] = iou[j]
         logger.info('miou: %f' % (miou))
         file.write('miou: %f' % (miou) + '\n')
+        ret_dict['miou']= miou
         file.write("****************************************************\n")
         print("****************************************************")
         file.close()
 
-        # iou_out = iou_out/(n_val*batch_size)
-        # miou_out = miou_out/(n_val*batch_size)
-        # class_name=["vehicle","person","two-wheel","rider","road","sidewalk","otherground","building","object","vegetation","trunk","terrain"]
-        # for j, class_index in enumerate(class_name):
-        #    logger.info('iou_%s: %f' % (class_index, iou_out[j]))
-        # logger.info('miou: %f' % (miou_out))
-
-    """
     logger.info('****************Evaluation done.*****************')
     return ret_dict
-    """
 
 
 if __name__ == '__main__':
