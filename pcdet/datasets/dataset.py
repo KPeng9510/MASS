@@ -270,6 +270,7 @@ class DatasetTemplate(torch_data.Dataset):
         data_dict.pop('origins', None)
         # print(data_dict.keys())
         # sys.exit()
+        ret['frame_id'] = []
         for key, val in data_dict.items():
             # print('collate: ', key)
             try:
@@ -287,6 +288,8 @@ class DatasetTemplate(torch_data.Dataset):
                     for k in range(batch_size):
                         batch_gt_boxes3d[k, :val[k].__len__(), :] = val[k]
                     ret[key] = batch_gt_boxes3d
+                elif key == 'frame_id':
+                    ret[key].append(data_dict['frame_id'])
                 else:
                     ret[key] = np.stack(val, axis=0)
             except:

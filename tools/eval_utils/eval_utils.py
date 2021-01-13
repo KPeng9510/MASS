@@ -147,7 +147,7 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
             prediction_save_path = result_dir / "eval_segmentation/"
             prediction_save_path.mkdir(parents=True, exist_ok=True)
             # for batch_index in range(batch_size):
-            #     img_path = prediction_save_path / ('%06d.png' % int(i * batch_size + batch_index))
+            #     img_path = prediction_save_path / ('%08d.png' % int(pred_dict['frame_id'][0][batch_index]))
             #     cls_id = pred[batch_index].cpu().numpy().astype(np.uint8)
             #     cls_id = np.transpose(cls_id, (1, 2, 0))
             #     rgb = id_to_rgb(cls_id)
