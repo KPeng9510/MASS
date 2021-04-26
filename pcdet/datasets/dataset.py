@@ -52,19 +52,19 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = Path("/home/ki/input/kitti/semantickitti/dataset/")
-        self.gt_dense_bin_root = self.root / 'pillarseg' / 'gt_dense_bin'
-        self.gt_dense_img_root = self.root / 'pillarseg' / 'gt_dense_image'
-        self.gt_obser_img_root = self.root / 'pillarseg'
+        self.root = Path("/home/kpeng/pc14/")
+        self.gt_dense_bin_root = self.root / 'kitti_odo'/'training'
+        self.gt_dense_img_root = self.root / 'dense_label'
+        self.gt_obser_img_root = self.root / 'occupancy'
 
         if training == True:
             self.split = "train"
             sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
-            file_name = "/home/ki/input/kitti/semantickitti/dataset/sample.pkl"
+            file_name = "/home/kpeng/pc14/sample_test.pkl"
         else:
             self.split = "test"
             sequence = ["08"]
-            file_name = "/home/ki/input/kitti/semantickitti/dataset/val_sample.pkl"
+            file_name = "/home/kpeng/pc14/sample.pkl"
 
         self.files_seq = []
         # comment it out when generate sample file
@@ -131,19 +131,19 @@ class DatasetTemplate(torch_data.Dataset):
         return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
     def get_grid_dense_gt_img(self, seq, index):
-        f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/learning_semantic_grid_dense/%015d.png' % int(index))
+        f_file = self.gt_obser_img_root / seq / ('%015d.png' % int(index))
         assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(501, 1001, 1)
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
     def get_sparse_gt_img(self, seq, index):
         f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/learning_semantic_grid_sparse/%015d.png' % int(index))
         assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(501, 1001, 1)
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
     def get_obser_img(self, seq, index):
-        f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/observations/%015d.png' % int(index))
+        f_file = self.gt_obser_img_root / seq / ('%06d.png' % int(index))
         assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(501, 1001, 1)
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
     def __len__(self):
         return len(self.files_seq)
@@ -161,10 +161,11 @@ class DatasetTemplate(torch_data.Dataset):
 
         """
         data_dict = {}
-        point_path = Path(self.files_seq[index].rstrip())
-        if not point_path.exists():
-            print(str(point_path))
+        point_path = self.files_seq[index].rstrip()
+        #if not point_path.exists():
+        #    print(str(point_path))
         # print(point_path)
+        point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
         points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
         points = points[mask]
@@ -173,7 +174,7 @@ class DatasetTemplate(torch_data.Dataset):
         data_dict["points"] = points
 
         seq = str(point_path).split('/')[-3]
-        idx = point_path.stem
+        idx = Path(point_path).stem
 
         data_dict['frame_id'] = seq+idx
 
