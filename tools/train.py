@@ -24,7 +24,7 @@ def parse_config():
 
     parser.add_argument('--batch_size', type=int, default=None, required=False, help='batch size for training')
     parser.add_argument('--epochs', type=int, default=None, required=False, help='number of epochs to train for')
-    parser.add_argument('--workers', type=int, default=8, help='number of workers for dataloader')
+    parser.add_argument('--workers', type=int, default=4, help='number of workers for dataloader')
     parser.add_argument('--extra_tag', type=str, default='default', help='extra tag for this experiment')
     parser.add_argument('--ckpt', type=str, default=None, help='checkpoint to start from')
     parser.add_argument('--pretrained_model', type=str, default=None, help='pretrained_model')
@@ -77,7 +77,7 @@ def main():
     if args.fix_random_seed:
         common_utils.set_random_seed(666)
 
-    output_dir = cfg.ROOT_DIR / 'output' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    output_dir = Path('/home/kpeng/pc14') / 'pillarseg_all' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     ckpt_dir = output_dir / 'ckpt'
     output_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
