@@ -12,6 +12,7 @@ from .processor.point_feature_encoder import PointFeatureEncoder
 import sys
 from pathlib import Path
 from skimage import io
+import time
 
 
 def recursive_glob(rootdir=".", suffix=""):
@@ -52,11 +53,11 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = Path("/home/kpeng/pc14/")
-        self.gt_dense_bin_root = self.root / 'kitti_odo'/'training'
-        self.gt_dense_img_root = self.root / 'dense_label'
-        self.gt_obser_img_root = self.root / 'occupancy'
-
+        self.root = Path("/local_data/datasets/kitti/")
+        self.gt_dense_bin_root = self.root / 'kitti_odo'
+        self.gt_dense_img_root = self.root / 'dense_label'/'dense_label'
+        self.gt_obser_img_root = self.root / 'occupancy'/'occupancy'
+        self.gt_sparse_img_root= self.root / 'sparse_label'/'sparse_label'
         if training == True:
             self.split = "train"
             sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
@@ -136,7 +137,8 @@ class DatasetTemplate(torch_data.Dataset):
         return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
     def get_sparse_gt_img(self, seq, index):
-        f_file = self.gt_obser_img_root / seq / ('single_shot/cartesian/learning_semantic_grid_sparse/%015d.png' % int(index))
+        f_file = self.gt_sparse_img_root / seq / ('%06d.png' % int(index))
+        #print(f_file)
         assert f_file.exists()
         return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
@@ -160,12 +162,13 @@ class DatasetTemplate(torch_data.Dataset):
         Returns:
 
         """
+        #t1=time.clock()
         data_dict = {}
         point_path = self.files_seq[index].rstrip()
         #if not point_path.exists():
         #    print(str(point_path))
         # print(point_path)
-        point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
+        point_path = "/local_data/datasets/kitti/kitti_odo/dataset/sequences/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
         points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
         points = points[mask]
@@ -180,7 +183,7 @@ class DatasetTemplate(torch_data.Dataset):
 
         # TODO dense gt
         # seg_gt = self.get_dense_gt_bin(seq, idx)
-        seg_gt = self.get_dense_gt_img(seq, idx)
+        seg_gt = self.get_sparse_gt_img(seq, idx)
 
         # get grid dense gt
         # seg_gt = self.get_grid_dense_gt_img(seq, idx)[:500, :1000, :]
@@ -213,6 +216,8 @@ class DatasetTemplate(torch_data.Dataset):
         data_dict['observations'] = obser / 255  # normalization
 
         data_dict.pop('points', None)
+        #print(t1-time.clock())
+        #sys.exit()
         return data_dict
 
     def prepare_data(self, data_dict):

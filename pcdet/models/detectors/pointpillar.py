@@ -186,8 +186,8 @@ class PointPillar(Detector3DTemplate):
             # weight[mask_obj]==5
             # weight[mask_person]==8
             # for dense gt TODO
-            weight[:, 0, :] = 5  # weight 5 for other dynamic object
-            weight[:, [1, 2, 3], :] = 8  # weight8 for pedestrain
+            weight[:, 0, :] = 2  # weight 5 for other dynamic object
+            weight[:, [1, 2, 3], :] = 7.5  # weight8 for pedestrain
             # for sparse
             # weight[:, 0, :] = 2  # weight 5 for vehicle
             # weight[:, [1, 2, 3], :] = 8  # weight8 for person, two wheel and rider
