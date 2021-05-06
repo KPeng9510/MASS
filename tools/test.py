@@ -32,7 +32,7 @@ def parse_config():
                         help='set extra config keys if needed')
 
     parser.add_argument('--max_waiting_mins', type=int, default=30, help='max waiting minutes')
-    parser.add_argument('--start_epoch', type=int, default=13, help='')
+    parser.add_argument('--start_epoch', type=int, default=15, help='')
     parser.add_argument('--eval_tag', type=str, default='default', help='eval tag for this experiment')
     parser.add_argument('--eval_all', action='store_true', default=True, help='whether to evaluate all checkpoints')
     parser.add_argument('--ckpt_dir', type=str, default=None, help='specify a ckpt directory to be evaluated if needed')
