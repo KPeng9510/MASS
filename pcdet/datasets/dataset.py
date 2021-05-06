@@ -54,10 +54,10 @@ class DatasetTemplate(torch_data.Dataset):
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
         self.root = Path("/local_data/datasets/kitti/")
-        self.gt_dense_bin_root = self.root / 'kitti_odo'
-        self.gt_dense_img_root = self.root / 'dense_label'/'dense_label'
-        self.gt_obser_img_root = self.root / 'occupancy'/'occupancy'
-        self.gt_sparse_img_root= self.root / 'sparse_label'/'sparse_label'
+        self.gt_dense_bin_root = self.root / 'kitti_odo/dataset/sequences'
+        self.gt_dense_img_root = self.root / 'dense_label/dense_label/'
+        self.gt_obser_img_root = self.root / 'occupancy/occupancy/'
+        self.gt_sparse_img_root= self.root /'sparse_label/sparse_label/'
         if training == True:
             self.split = "train"
             sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
