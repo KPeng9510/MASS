@@ -53,11 +53,11 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = Path("/local_data/datasets/kitti/")
-        self.gt_dense_bin_root = self.root / 'kitti_odo/dataset/sequences'
-        self.gt_dense_img_root = self.root / 'dense_label/dense_label/'
-        self.gt_obser_img_root = self.root / 'occupancy/occupancy/'
-        self.gt_sparse_img_root= self.root /'sparse_label/sparse_label/'
+        self.root = Path("/home/kpeng/pc14/")
+        self.gt_dense_bin_root = self.root / 'kitti_odo/training/'
+        self.gt_dense_img_root = self.root / 'dense_label'
+        self.gt_obser_img_root = self.root / 'occupancy/'
+        self.gt_sparse_img_root= self.root /'sparse_label'
         if training == True:
             self.split = "train"
             sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
@@ -168,7 +168,7 @@ class DatasetTemplate(torch_data.Dataset):
         #if not point_path.exists():
         #    print(str(point_path))
         # print(point_path)
-        point_path = "/local_data/datasets/kitti/kitti_odo/dataset/sequences/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
+        point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
         points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
         points = points[mask]
