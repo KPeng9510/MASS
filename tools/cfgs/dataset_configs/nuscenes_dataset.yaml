@@ -1,5 +1,5 @@
 DATASET: 'DatasetTemplate'
-DATA_PATH: '../../data_new/'
+DATA_PATH: '/cvhci/data/nuScenes/data/sampels/LIDAR_TOP/'
 
 VERSION: 'v1.0-trainval'
 MAX_SWEEPS: 1

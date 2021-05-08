@@ -183,7 +183,7 @@ class DatasetTemplate(torch_data.Dataset):
 
         # TODO dense gt
         # seg_gt = self.get_dense_gt_bin(seq, idx)
-        seg_gt = self.get_sparse_gt_img(seq, idx)
+        seg_gt = self.get_dense_gt_img(seq, idx)
 
         # get grid dense gt
         # seg_gt = self.get_grid_dense_gt_img(seq, idx)[:500, :1000, :]
