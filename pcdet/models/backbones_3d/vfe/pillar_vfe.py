@@ -223,7 +223,7 @@ class PillarVFE(VFETemplate):
             )
         self.pfn_layers = nn.ModuleList(pfn_layers)
         self.relu = nn.ReLU()
-        self.lstm_attention = lstm_attention(num_point_features, num_point_features)
+        #self.lstm_attention = lstm_attention(num_point_features, num_point_features)
         #self.graph_attention=Graph_attention(num_point_features, 4)
         #self.graph_attention_2=Graph_attention(num_input_features,4)
         self.pointsmean_attention = pointsmean_attention(num_point_features, 100)
@@ -406,9 +406,9 @@ class PillarVFE(VFETemplate):
             batch_features = features[batch_mask, :]
             #batch_spatial_features.append(spatial_feature)
             batch_points_mean = points_mean[batch_mask,:]
-            lstm_attention = self.lstm_attention(batch_features,batch_points_mean)
-            
-            batch_features = lstm_attention*batch_features
+            #lstm_attention = self.lstm_attention(batch_features,batch_points_mean)
+            #
+            #batch_features = lstm_attention*batch_features
             features_ori = batch_features
             #batch_features = self.graph_attention(batch_features)
             

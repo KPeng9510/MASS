@@ -55,8 +55,8 @@ class DatasetTemplate(torch_data.Dataset):
         self._merge_all_iters_to_one_epoch = False
         self.root = Path("/home/kpeng/pc14/")
         self.gt_dense_bin_root = self.root / 'kitti_odo/training/'
-        self.gt_dense_img_root = self.root / 'dense_label'
-        self.gt_obser_img_root = self.root / 'occupancy/'
+        self.gt_dense_img_root = self.root / 'nuscenes/label_image_dense/'
+        self.gt_obser_img_root = self.root / 'visi_nusc/'
         self.gt_sparse_img_root= self.root /'sparse_label'
         if training == True:
             self.split = "train"
@@ -78,11 +78,25 @@ class DatasetTemplate(torch_data.Dataset):
         # sys.exit()
         # end
 
-        open_file = open(file_name, "rb")
-        self.files_seq = pickle.load(open_file)
-        open_file.close()
+        #open_file = open(file_name, "rb")
+        self.files_seq = self.include_nuscenes_data(self.split)
+        #open_file.close()
         # print(len(self.files_seq)
+    def include_nuscenes_data(self, mode):
+        self.logger.info('Loading NuScenes dataset')
+        nuscenes_infos = []
+        if mode == 'train':
+            info_path="/home/kpeng/pc14/nusc/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+        else:
+            info_path = "/home/kpeng/pc14/nusc/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+        
+        with open(info_path, 'rb') as f:
+             infos = pickle.load(f)
+             nuscenes_infos.extend(infos)
 
+        #self.infos.extend(nuscenes_infos)
+        #self.logger.info('Total samples for NuScenes dataset: %d' % (len(nuscenes_infos)))
+        return nuscenes_infos
     @property
     def mode(self):
 
@@ -122,14 +136,15 @@ class DatasetTemplate(torch_data.Dataset):
             self._merge_all_iters_to_one_epoch = False
 
     def get_dense_gt_bin(self, seq, index):
-        f_file = self.gt_dense_bin_root / seq / ('%s.bin' % index)
+        f_file = self.gt_dense_bin_root / index
         assert f_file.exists()
-        return np.fromfile(str(f_file), dtype=np.float32, count=-1).reshape(500, 1000, 1)
+        return np.fromfile(str(f_file), dtype=np.float32, count=-1).reshape(512, 512, 1)
 
     def get_dense_gt_img(self, seq, index):
-        f_file = self.gt_dense_img_root / seq / ('%s.png' % index)
-        assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
+        f_file = str(self.gt_dense_img_root /'LIDAR_TOP'/ index.split('.')[0])+".png"
+        #print(f_file)
+        #assert f_file.exists()
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(512, 512, 1)
 
     def get_grid_dense_gt_img(self, seq, index):
         f_file = self.gt_obser_img_root / seq / ('%015d.png' % int(index))
@@ -143,9 +158,9 @@ class DatasetTemplate(torch_data.Dataset):
         return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
 
     def get_obser_img(self, seq, index):
-        f_file = self.gt_obser_img_root / seq / ('%06d.png' % int(index))
-        assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
+        f_file = str(self.gt_obser_img_root /index)+ '.png'
+        #assert f_file.exists()
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(512, 512, 1)
 
     def __len__(self):
         return len(self.files_seq)
@@ -164,15 +179,16 @@ class DatasetTemplate(torch_data.Dataset):
         """
         #t1=time.clock()
         data_dict = {}
-        point_path = self.files_seq[index].rstrip()
+        point_path = self.files_seq[index]['lidar_path'].rstrip()
         #if not point_path.exists():
         #    print(str(point_path))
         # print(point_path)
-        point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
-        points = np.fromfile(str(point_path), dtype=np.float32, count=-1).reshape([-1, 4])
+        #point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
+        pt = '/cvhci/data/nuScenes/data/'+point_path
+        points = np.fromfile(str(pt), dtype=np.float32, count=-1).reshape([-1, 5])[:,:4]
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
         points = points[mask]
-
+        pat= point_path.split('/')[-1]
         points = np.concatenate([points, np.zeros([points.shape[0], 1])], axis=-1)
         data_dict["points"] = points
 
@@ -183,7 +199,8 @@ class DatasetTemplate(torch_data.Dataset):
 
         # TODO dense gt
         # seg_gt = self.get_dense_gt_bin(seq, idx)
-        seg_gt = self.get_dense_gt_img(seq, idx)
+        
+        seg_gt = self.get_dense_gt_img(seq, pat)
 
         # get grid dense gt
         # seg_gt = self.get_grid_dense_gt_img(seq, idx)[:500, :1000, :]
@@ -203,7 +220,7 @@ class DatasetTemplate(torch_data.Dataset):
 
 
         # load observations
-        obser = self.get_obser_img(seq, idx)[:500, :1000, :]
+        obser = self.get_obser_img(seq, pat)[:512, :512, :]
         # print(obser.shape)
         data_dict['observations'] = obser
 

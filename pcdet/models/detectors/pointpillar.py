@@ -132,7 +132,7 @@ class PointPillar(Detector3DTemplate):
         # for attentional fusion
         # self.segmentation_head = SimplifiedUNet(64, 12)
         # for concat fusion
-        self.segmentation_head = SimplifiedUNet(128, 12)
+        self.segmentation_head = SimplifiedUNet(128, 16)
         self.focal_loss = FocalLoss()
 
     def forward(self, batch_dict):
@@ -169,9 +169,9 @@ class PointPillar(Detector3DTemplate):
         if self.training:
             # targets_crr = targets_crr.contiguous().view(batch, c, h, w)
             nozero_mask = targets_crr != 0
-            targets_crr = torch.clamp(targets_crr[nozero_mask], 1, 12)
+            targets_crr = torch.clamp(targets_crr[nozero_mask], 1, 16)
             # ori_target = targets_crr
-            targets_crr = one_hot_1d((targets_crr - 1).long(), 12).unsqueeze(0).permute(0, 2, 1).cuda()
+            targets_crr = one_hot_1d((targets_crr - 1).long(), 16).unsqueeze(0).permute(0, 2, 1).cuda()
             pred = pred.permute(0, 2, 3, 1).unsqueeze(1)[nozero_mask].squeeze().unsqueeze(0).permute(0, 2, 1)
             object_list = [0, 2, 3]
             # for obj in object_list:
@@ -186,8 +186,8 @@ class PointPillar(Detector3DTemplate):
             # weight[mask_obj]==5
             # weight[mask_person]==8
             # for dense gt TODO
-            weight[:, 0, :] = 2  # weight 5 for other dynamic object
-            weight[:, [1, 2, 3], :] = 7.5  # weight8 for pedestrain
+            weight[:, 4, :] = 2  # weight 5 for other dynamic object
+            weight[:, [7, 2, 6], :] = 7.5  # weight8 for pedestrain
             # for sparse
             # weight[:, 0, :] = 2  # weight 5 for vehicle
             # weight[:, [1, 2, 3], :] = 8  # weight8 for person, two wheel and rider

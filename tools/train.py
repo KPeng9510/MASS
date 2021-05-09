@@ -77,7 +77,7 @@ def main():
     if args.fix_random_seed:
         common_utils.set_random_seed(666)
     cfg.ROOT_DIR=Path('/home/kpeng/pc14/model/')
-    output_dir = cfg.ROOT_DIR/ 'pillarseg_withlstm_v_sparse' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    output_dir = cfg.ROOT_DIR/ 'pillarseg_with_v_dense_nusc' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     ckpt_dir = output_dir / 'ckpt'
     output_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
