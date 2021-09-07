@@ -1,5 +1,5 @@
 # MASS: Multi-Attentional Semantic Segmentation of LiDAR Data for Dense Top-View Understanding
-<img src="docs/MASS" align="right" width="50%">
+<img src="docs/MASS.png" align="right" width="50%">
 We are aiming at recovering dense top-view semantic segmentation based on sparse LiDAR signal input. Our code is built based on OpenPCDet repo https://github.com/open-mmlab/OpenPCDet.git.
 # OpenPCDet
 
@@ -14,28 +14,12 @@ It is also the official code release of [`[PointRCNN]`](https://arxiv.org/abs/18
 
 
 
-## KITTI 3D Object Detection Baselines
-Selected supported methods are shown in the below table. The results are the 3D detection performance of moderate difficulty on the *val* set of KITTI dataset.
-* All models are trained with 8 GTX 1080Ti GPUs and are available for download. 
-* The training time is measured with 8 TITAN XP GPUs and PyTorch 1.5.
+## KITTI Dense Top-view Semantic Segmentation Baseline
 
-|                                             | training time | Car@R11 | Pedestrian@R11 | Cyclist@R11  | download | 
-|---------------------------------------------|----------:|:-------:|:-------:|:-------:|:---------:|
-| [PointPillar](tools/cfgs/kitti_models/pointpillar.yaml) |~1.2 hours| 77.28 | 52.29 | 62.68 | [model-18M](https://drive.google.com/file/d/1wMxWTpU1qUoY3DsCH31WJmvJxcjFXKlm/view?usp=sharing) | 
-| [SECOND](tools/cfgs/kitti_models/second.yaml)       |  ~1.7 hours  | 78.62 | 52.98 | 67.15 | [model-20M](https://drive.google.com/file/d/1-01zsPOsqanZQqIIyy7FpNXStL3y4jdR/view?usp=sharing) |
-| [PointRCNN](tools/cfgs/kitti_models/pointrcnn.yaml) | ~3 hours | 78.70 | 54.41 | 72.11 | [model-16M](https://drive.google.com/file/d/1BCX9wMn-GYAfSOPpyxf6Iv6fc0qKLSiU/view?usp=sharing)| 
-| [PointRCNN-IoU](tools/cfgs/kitti_models/pointrcnn_iou.yaml) | ~3 hours | 78.75 | 58.32 | 71.34 | [model-16M](https://drive.google.com/file/d/1V0vNZ3lAHpEEt0MlT80eL2f41K2tHm_D/view?usp=sharing)|
-| [Part-A^2-Free](tools/cfgs/kitti_models/PartA2_free.yaml)   | ~3.8 hours| 78.72 | 65.99 | 74.29 | [model-226M](https://drive.google.com/file/d/1lcUUxF8mJgZ_e-tZhP1XNQtTBuC-R0zr/view?usp=sharing) |
-| [Part-A^2-Anchor](tools/cfgs/kitti_models/PartA2.yaml)    | ~4.3 hours| 79.40 | 60.05 | 69.90 | [model-244M](https://drive.google.com/file/d/10GK1aCkLqxGNeX3lVu8cLZyE0G8002hY/view?usp=sharing) |
-| [PV-RCNN](tools/cfgs/kitti_models/pv_rcnn.yaml) | ~5 hours| 83.61 | 57.90 | 70.47 | [model-50M](https://drive.google.com/file/d/1lIOq4Hxr0W3qsX83ilQv0nk1Cls6KAr-/view?usp=sharing) |
 
-## NuScenes 3D Object Detection Baselines
-All models are trained with 8 GTX 1080Ti GPUs and are available for download.
 
-|                                             | mATE | mASE | mAOE | mAVE | mAAE | mAP | NDS | download | 
-|---------------------------------------------|----------:|:-------:|:-------:|:-------:|:---------:|:-------:|:-------:|:---------:|
-| [PointPillar-MultiHead](tools/cfgs/nuscenes_models/cbgs_pp_multihead.yaml) | 33.87	| 26.00 | 32.07	| 28.74 | 20.15 | 44.63 | 58.23	 | [model-23M](https://drive.google.com/file/d/1p-501mTWsq0G9RzroTWSXreIMyTUUpBM/view?usp=sharing) | 
-| [SECOND-MultiHead (CBGS)](tools/cfgs/nuscenes_models/cbgs_second_multihead.yaml) | 31.15 |	25.51 |	26.64 | 26.26 | 20.46 | 50.59 | 62.29 | [model-35M](https://drive.google.com/file/d/1bNzcOnE3u9iooBFMk2xK7HqhdeQ_nwTq/view?usp=sharing) |
+## NuScenes Dense Top-view Semantic segmentation Baseline
+
 
 
 ## Installation
