@@ -19,7 +19,9 @@ The tools for generating dense top-view label through multi-scene aggregating an
 
 Code is in voxelize folder, please run cmake first to build it and use dense.cpp to generate the visibility map. Thanks to https://github.com/peiyunh/wysiwyg.git.
 
+## Branches
 
+Master branch is currently set up for nuScenes dataset. Config file can be found in tools/cfgs/nuscenes_models/cbgs_pp_multihead.yaml, please follow the guidance of OpenPCDet to run the code.
 ## Installation
 
 Please refer to [INSTALL.md](docs/INSTALL.md) for the installation of `OpenPCDet`.
