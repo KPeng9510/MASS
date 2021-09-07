@@ -11,15 +11,13 @@ It is also the official code release of [`[PointRCNN]`](https://arxiv.org/abs/18
 ## Introduction
 
 
+## Label Densification
 
+The tools for generating dense top-view label through multi-scene aggregating and top-view projection is in label processing tools. The lidaeseg_annotools.py maps nuScenes classes to desired class index in MASS. Then lidar_seg_label_cating.py will concate the semantic segmentation label for each LiDAR point. ego.py is leveraged for multi-frame lidar densification using the ego pose given by nuScenes. gt_img.py gives the color map and visualize the prediction/label.
 
+## Visibility Map Generation
 
-## KITTI Dense Top-view Semantic Segmentation Baseline
-
-
-
-## NuScenes Dense Top-view Semantic segmentation Baseline
-
+Code is in voxelize folder, please run cmake first to build it and use dense.cpp to generate the visibility map. Thanks to https://github.com/peiyunh/wysiwyg.git.
 
 
 ## Installation
