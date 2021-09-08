@@ -13,7 +13,7 @@ It is also the official code release of [`[PointRCNN]`](https://arxiv.org/abs/18
 
 ## Label Densification
 
-The tools for generating dense top-view label through multi-scene aggregating and top-view projection is in label processing tools. The lidaeseg_annotools.py maps nuScenes classes to desired class index in MASS. Then lidar_seg_label_cating.py will concate the semantic segmentation label for each LiDAR point. ego.py is leveraged for multi-frame lidar densification using the ego pose given by nuScenes. gt_img.py gives the color map and visualize the prediction/label.
+Nuscenes tools: The tools for generating dense top-view label through multi-scene aggregating and top-view projection is in label processing tools. The lidaeseg_annotools.py maps nuScenes classes to desired class index in MASS. Then lidar_seg_label_cating.py will concate the semantic segmentation label for each LiDAR point. ego.py is leveraged for multi-frame lidar densification using the ego pose given by nuScenes. gt_img.py gives the color map and visualize the prediction/label.
 
 ## Visibility Map Generation
 
@@ -21,7 +21,14 @@ Code is in voxelize folder, please run cmake first to build it and use dense.cpp
 
 ## Branches
 
-Master branch is currently set up for nuScenes dataset. Config file can be found in tools/cfgs/nuscenes_models/cbgs_pp_multihead.yaml, please follow the guidance of OpenPCDet to run the code. For SemanticKitti dataset, if you have get accessed to Kitti-odo and SemanticKitti dataset, please forward the access email from KITTI to pengkunyu1013@gmail.com, the download link for the dense and sparse top-view semantic segmentation label will be given.
+Master branch is currently set up for SemanticKITTI dataset. Config file can be found in tools/cfgs/nuscenes_models/cbgs_pp_multihead.yaml, please follow the guidance of OpenPCDet to run the code. 
+
+COde for Nuscenes dataset can be found in branch nuscenes_pillarseg.
+
+For SemanticKitti dataset, if you have get accessed to Kitti-odo and SemanticKitti dataset, please forward the access email from KITTI to pengkunyu1013@gmail.com, the download link for the dense and sparse top-view semantic segmentation label will be given.
+
+The label is stored in binary file wuth data type float32 and should be reshaped as (500,1000) to match our code.
+
 semantic_kitti_pillarseg is for SemanticKitti dataset while using the same config file as tools/cfgs/nuscenes_models/cbgs_pp_multihead.yaml to run.
 ## Installation
 
