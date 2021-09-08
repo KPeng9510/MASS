@@ -23,7 +23,7 @@ Code is in voxelize folder, please run cmake first to build it and use dense.cpp
 
 Master branch is currently set up for SemanticKITTI dataset. Config file can be found in tools/cfgs/nuscenes_models/cbgs_pp_multihead.yaml, please follow the guidance of OpenPCDet to run the code. 
 
-COde for Nuscenes dataset can be found in branch nuscenes_pillarseg.
+Code for nuScenes dataset can be found in branch nuscenes_pillarseg.
 
 For SemanticKitti dataset, if you have get accessed to Kitti-odo and SemanticKitti dataset, please forward the access email from KITTI to pengkunyu1013@gmail.com, the download link for the dense and sparse top-view semantic segmentation label will be given.
 
