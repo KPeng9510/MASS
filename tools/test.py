@@ -147,8 +147,8 @@ def main():
     else:
         assert args.batch_size % total_gpus == 0, 'Batch size should match the number of gpus'
         args.batch_size = args.batch_size // total_gpus
-    cfg.ROOT_DIR=Path('/home/kpeng/pc14/model/')
-    output_dir = cfg.ROOT_DIR / 'pillarseg_withlstm_v_sparse' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    cfg.ROOT_DIR=Path('/home/kpeng/mass/model/')
+    output_dir = cfg.ROOT_DIR / 'pillarseg_LPG' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     output_dir.mkdir(parents=True, exist_ok=True)
 
     eval_output_dir = output_dir / 'eval_dense/'

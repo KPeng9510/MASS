@@ -407,15 +407,20 @@ class PillarVFE(VFETemplate):
             batch_features = features[batch_mask, :]
             #batch_spatial_features.append(spatial_feature)
             batch_points_mean = points_mean[batch_mask,:]
-            voxel_attention1 = self.pointsmean_attention(batch_points_mean, batch_features)
-            batch_features = voxel_attention1 * batch_features
-            features_ori = batch_features
+            #voxel_attention1 = self.pointsmean_attention(batch_points_mean, batch_features)
+            #batch_features = voxel_attention1 * batch_features
+            #features_ori = batch_features
             #batch_features  = self.graph_attention(batch_features)
             #features_ori = batch_features
             lstm_attention = self.lstm_attention(batch_features,batch_points_mean)
             #
+
             batch_features = lstm_attention*batch_features
-            #features_ori = batch_features
+
+            features_ori = batch_features
+            voxel_attention1 = self.pointsmean_attention(batch_points_mean, batch_features)
+            batch_features = voxel_attention1 * batch_features
+
             batch_features = self.graph_attention(batch_features)
             
             #voxel_attention1 = self.pointsmean_attention(batch_points_mean, batch_features)
