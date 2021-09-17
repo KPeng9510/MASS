@@ -473,7 +473,7 @@ if __name__ == '__main__':
         create_nuscenes_info(
             version=dataset_cfg.VERSION,
             data_path='/cvhci/data/nuScenes/data/',
-            save_path='/home/kpeng/pc14/nusc/',
+            save_path='/home/kpeng/occupancy/data_seg/',
             max_sweeps=dataset_cfg.MAX_SWEEPS,
         )
         """

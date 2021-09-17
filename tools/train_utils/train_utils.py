@@ -1,6 +1,6 @@
 import glob
 import os
-
+import numpy as np
 import torch
 import tqdm
 from torch.nn.utils import clip_grad_norm_
@@ -31,8 +31,11 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
 
         if tb_log is not None:
             tb_log.add_scalar('meta_data/learning_rate', cur_lr, accumulated_iter)
-
+        model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+        params = sum([np.prod(p.size()) for p in model_parameters])
+        print(params)
         model.train()
+        sys.exit()
         optimizer.zero_grad()
         #print("batch_information")
         #print(batch.keys())

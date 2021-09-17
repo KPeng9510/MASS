@@ -22,7 +22,7 @@ def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config for training')
 
-    parser.add_argument('--batch_size', type=int, default=None, required=False, help='batch size for training')
+    parser.add_argument('--batch_size', type=int, default=4, required=False, help='batch size for training')
     parser.add_argument('--epochs', type=int, default=None, required=False, help='number of epochs to train for')
     parser.add_argument('--workers', type=int, default=6, help='number of workers for dataloader')
     parser.add_argument('--extra_tag', type=str, default='default', help='extra tag for this experiment')
@@ -76,8 +76,8 @@ def main():
 
     if args.fix_random_seed:
         common_utils.set_random_seed(666)
-    cfg.ROOT_DIR=Path('/home/kpeng/pc14/model/')
-    output_dir = cfg.ROOT_DIR/ 'pillarseg__dense_nusc' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    cfg.ROOT_DIR=Path('/home/kpeng/occupancy/model/')
+    output_dir = cfg.ROOT_DIR/ 'pillarseg_dense_nusc_all_visi_with_noise_test_num_pa' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     ckpt_dir = output_dir / 'ckpt'
     output_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)

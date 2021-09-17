@@ -53,19 +53,20 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = Path("/home/kpeng/pc14/")
+        self.root = Path("/export/md0/dataset/MASS/")
         self.gt_dense_bin_root = self.root / 'kitti_odo/training/'
-        self.gt_dense_img_root = self.root / 'nuscenes/label_image_dense/'
-        self.gt_obser_img_root = self.root / 'visi_nusc/'
+        self.gt_dense_img_root = self.root / 'nu_lidar_seg/label_image_dense_re/samples/'
+        self.gt_obser_img_root = self.root / 'visi_nusc_gaussian_noise/'
         self.gt_sparse_img_root= self.root /'sparse_label'
         if training == True:
             self.split = "train"
-            sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
-            file_name = "/home/kpeng/pc14/sample_test.pkl"
+            #sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
+            #file_name = "/home/kpeng/pc14/sample_test.pkl"
+            file_name = "/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         else:
             self.split = "test"
-            sequence = ["08"]
-            file_name = "/home/kpeng/pc14/sample.pkl"
+            #sequence = ["08"]
+            file_name = "/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
 
         self.files_seq = []
         # comment it out when generate sample file
@@ -86,9 +87,9 @@ class DatasetTemplate(torch_data.Dataset):
         self.logger.info('Loading NuScenes dataset')
         nuscenes_infos = []
         if mode == 'train':
-            info_path="/home/kpeng/pc14/nusc/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            info_path="/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         else:
-            info_path = "/home/kpeng/pc14/nusc/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            info_path = "/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         
         with open(info_path, 'rb') as f:
              infos = pickle.load(f)
@@ -141,7 +142,7 @@ class DatasetTemplate(torch_data.Dataset):
         return np.fromfile(str(f_file), dtype=np.float32, count=-1).reshape(512, 512, 1)
 
     def get_dense_gt_img(self, seq, index):
-        f_file = str(self.gt_dense_img_root /'LIDAR_TOP'/ index.split('.')[0])+".png"
+        f_file = str(self.gt_dense_img_root /'LIDAR_TOP'/ index)+".png"
         #print(f_file)
         #assert f_file.exists()
         return np.array(io.imread(f_file), dtype=np.float32).reshape(512, 512, 1)
@@ -186,6 +187,15 @@ class DatasetTemplate(torch_data.Dataset):
         #point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
         pt = '/cvhci/data/nuScenes/data/'+point_path
         points = np.fromfile(str(pt), dtype=np.float32, count=-1).reshape([-1, 5])[:,:4]
+        number = points.shape[0]
+        noise_x = np.random.randn(int(number/10))*102.4-51.2
+        noise_y = np.random.randn(int(number/10))*102.4-51.2
+        noise_z = np.random.randn(int(number/10))*8-5
+        noise = np.stack([noise_x, noise_y, noise_z, np.ones(int(number/10))], axis=-1)
+
+        points = np.concatenate([points,noise],axis=0)
+
+
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
         points = points[mask]
         pat= point_path.split('/')[-1]

@@ -225,18 +225,18 @@ class PillarVFE(VFETemplate):
         self.relu = nn.ReLU()
         #self.lstm_attention = lstm_attention(num_point_features, num_point_features)
         #self.graph_attention=Graph_attention(num_point_features, 4)
-        #self.graph_attention_2=Graph_attention(num_input_features,4)
+        #self.graph_attention_2=Graph_attention(num_point_features,4)
         #self.pointsmean_attention = pointsmean_attention(num_point_features, 100)
         #self.pointsmean_attention_2 = pointsmean_attention(num_input_features, 100)
         #self.feastconv = FeaStConv(20, num_input_features-1, 3, True, 1)
-        self.FC1=nn.Sequential(
-        nn.Linear(2*num_point_features, num_point_features),
-        nn.ReLU(inplace=True),
-        )
-        self.FC2=nn.Sequential(
-        nn.Linear(num_point_features,num_point_features),
-            nn.ReLU(inplace=True),
-        )
+        #self.FC1=nn.Sequential(
+        #nn.Linear(2*num_point_features, num_point_features),
+        #nn.ReLU(inplace=True),
+        #)
+        #self.FC2=nn.Sequential(
+        #nn.Linear(num_point_features,num_point_features),
+        #    nn.ReLU(inplace=True),
+        #)
 
 
         self.voxel_x = voxel_size[0]
@@ -398,7 +398,7 @@ class PillarVFE(VFETemplate):
         mask = self.get_paddings_indicator(voxel_num_points, voxel_count, axis=0)
         mask = torch.unsqueeze(mask, -1).type_as(voxel_features)
         features *= mask
-        """
+        
         batch_spatial_features={}
         container = torch.zeros_like(features)
         for index in range(batch_size):
@@ -431,7 +431,7 @@ class PillarVFE(VFETemplate):
             #len1,len2 = final_result[0].size()[0], final_result[1].size()[0]
             #features = torch.cat([final_result[0], final_result[1]],dim=0)
         features = container
-        """
+        
         for pfn in self.pfn_layers:
             features = pfn(features)
         features = features.squeeze()
