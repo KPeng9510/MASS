@@ -77,7 +77,7 @@ def main():
     if args.fix_random_seed:
         common_utils.set_random_seed(666)
     cfg.ROOT_DIR=Path('/home/kpeng/occupancy/model/')
-    output_dir = cfg.ROOT_DIR/ 'pillarseg_dense_nusc_all_visi_with_noise_test_num_pa' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    output_dir = cfg.ROOT_DIR/ 'pillarseg_dense_nusc_all_PLG' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     ckpt_dir = output_dir / 'ckpt'
     output_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)

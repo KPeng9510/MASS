@@ -31,11 +31,11 @@ class PointPillarScatter(nn.Module):
         self.nx, self.ny, self.nz = grid_size
         # self.nx = 1001
 
-        #self.conv_obser = nn.Sequential(
-        #    nn.Conv2d(1, 64, kernel_size=3, padding=1, bias=False),
-        #    nn.BatchNorm2d(64, eps=1e-3, momentum=0.01),
-        #    nn.ReLU()
-        #)
+        self.conv_obser = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(64, eps=1e-3, momentum=0.01),
+            nn.ReLU()
+        )
 
         # self.w_pillar = nn.Sequential(
         #     nn.Conv2d(64, 1, kernel_size=3, padding=1, bias=False),
