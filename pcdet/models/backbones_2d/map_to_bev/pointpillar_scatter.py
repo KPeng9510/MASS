@@ -126,8 +126,8 @@ class PointPillarScatter(nn.Module):
         """
         batch_spatial_features = batch_spatial_features.view(batch_size, self.num_bev_features * self.nz, self.ny,
                                                              self.nx)
-        observations = batch_dict['observations'].contiguous().view(batch_size, 1, self.ny, self.nx)
-        observations = self.conv_obser(observations)
+        #observations = batch_dict['observations'].contiguous().view(batch_size, 1, self.ny, self.nx)
+        #observations = self.conv_obser(observations)
 
         # Attentional fusion module
         # weight_pillar = self.w_pillar(batch_spatial_features)
@@ -136,7 +136,7 @@ class PointPillarScatter(nn.Module):
         # batch_spatial_features = batch_spatial_features * weight[:, 0:1, :, :] + observations * weight[:, 1:, :, :]
 
         # concat fusion module
-        batch_spatial_features = torch.cat([batch_spatial_features, observations], dim=1)
+        #batch_spatial_features = torch.cat([batch_spatial_features, observations], dim=1)
 
         batch_dict['spatial_features'] = batch_spatial_features.contiguous()
 

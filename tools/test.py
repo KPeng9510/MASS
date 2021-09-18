@@ -21,7 +21,7 @@ def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config for training')
 
-    parser.add_argument('--batch_size', type=int, default=None, required=False, help='batch size for training')
+    parser.add_argument('--batch_size', type=int, default=4, required=False, help='batch size for training')
     parser.add_argument('--workers', type=int, default=4, help='number of workers for dataloader')
     parser.add_argument('--extra_tag', type=str, default='default', help='extra tag for this experiment')
     parser.add_argument('--ckpt', type=str, default=None, help='checkpoint to start from')
@@ -32,7 +32,7 @@ def parse_config():
                         help='set extra config keys if needed')
 
     parser.add_argument('--max_waiting_mins', type=int, default=30, help='max waiting minutes')
-    parser.add_argument('--start_epoch', type=int, default=28, help='')
+    parser.add_argument('--start_epoch', type=int, default=22, help='')
     parser.add_argument('--eval_tag', type=str, default='default', help='eval tag for this experiment')
     parser.add_argument('--eval_all', action='store_true', default=True, help='whether to evaluate all checkpoints')
     parser.add_argument('--ckpt_dir', type=str, default=None, help='specify a ckpt directory to be evaluated if needed')
@@ -147,8 +147,8 @@ def main():
     else:
         assert args.batch_size % total_gpus == 0, 'Batch size should match the number of gpus'
         args.batch_size = args.batch_size // total_gpus
-    cfg.ROOT_DIR=Path('/home/kpeng/mass/model/')
-    output_dir = cfg.ROOT_DIR / 'pillarseg_LPG' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
+    cfg.ROOT_DIR=Path('/home/kpeng/occupancy/model/')
+    output_dir = cfg.ROOT_DIR / 'pillarseg_pillar_noise' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     output_dir.mkdir(parents=True, exist_ok=True)
 
     eval_output_dir = output_dir / 'eval_dense/'

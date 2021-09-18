@@ -53,10 +53,10 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = Path("/export/md0/datasets/mass/")
+        self.root = Path("/export/md0/dataset/MASS/")
         self.gt_dense_bin_root = self.root / 'kitti_odo/training/'
         self.gt_dense_img_root = self.root / 'nu_lidar_seg/label_image_dense_re/samples/'
-        self.gt_obser_img_root = self.root / 'visi_nusc/'
+        self.gt_obser_img_root = self.root / 'visi_nusc_gaussian_noise/'
         self.gt_sparse_img_root= self.root /'sparse_label'
         if training == True:
             self.split = "train"
@@ -193,7 +193,7 @@ class DatasetTemplate(torch_data.Dataset):
         noise_z = np.random.randn(int(number/10))*8-5
         noise = np.stack([noise_x, noise_y, noise_z, np.ones(int(number/10))], axis=-1)
 
-        #points = np.concatenate([points,noise],axis=0)
+        points = np.concatenate([points,noise],axis=0)
 
 
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)

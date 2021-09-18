@@ -14,7 +14,7 @@ import os
 import cv2
 from PIL import Image
 
-
+"""
 color_map={
   "0" : [255, 255, 255],
   "1": [0, 0, 255],
@@ -30,13 +30,34 @@ color_map={
   "12": [150, 240, 80],
   "9": [135,60,0]
 }
+"""
+color_map ={
+"0": [255, 255, 255],
+"1": [112, 128, 144],
+"2": [220, 20, 60],
+"3": [255, 127, 80],
+"4": [255, 158, 0],
+"5": [233, 150, 70],
+"6": [255, 61, 99],
+"7": [0, 0, 230],
+"8": [47, 79, 79],
+"9": [255, 140, 0],
+"10": [255, 99, 71],
+"11": [0, 207, 191],
+"12": [175, 0, 75],
+"13": [75, 0, 75],
+"14": [112, 180, 60],
+"15": [222, 184, 135],
+"16": [0, 175, 0]
+}
+
 
 
 def id_to_rgb(pred_id):
     shape = list(pred_id.shape)[:2]
     shape.append(3)
     rgb = np.zeros(shape, dtype=np.uint8) + 255
-    for i in range(0, 12):
+    for i in range(0, 16):
         mask = pred_id[:, :, 0] == i
         # print(mask.shape)
         if mask.sum() == 0:
@@ -45,9 +66,9 @@ def id_to_rgb(pred_id):
     return rgb.astype(np.uint8)
 
 
-def get_iou(pred, gt, number, intersect, union, index, logger, result_dir, time_stamp, n_classes=12):
+def get_iou(pred, gt, number, intersect, union, index, logger, result_dir, time_stamp, n_classes=16):
     total_miou = 0.0
-    class_name = ["vehicle", "person", "two-wheel", "rider", "road", "sidewalk", "otherground", "building", "object",
+    class_name = ["barrier", "bicycle", "two-wheel", "rider", "road", "sidewalk", "otherground", "building", "object",
                   "vegetation", "trunk", "terrain"]
     iou_list_sum = torch.zeros([n_classes])
     for i in range(len(pred)):
@@ -119,8 +140,8 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
     start_time = time.time()
     n_val = len(dataloader)
     with tqdm.tqdm(total=n_val, desc='Val', unit='batch', leave=False) as pbar:
-        intersection = torch.zeros(12)
-        union = torch.zeros(12)
+        intersection = torch.zeros(16)
+        union = torch.zeros(16)
         for i, batch_dict in enumerate(dataloader):
 
             load_data_to_gpu(batch_dict)
@@ -138,21 +159,29 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
             # mask[no_obser_mask] = 0
             # anti_mask = ~(mask.bool())
             # dense_gt[anti_mask] = 0
-            pred = pred_dict["prediction"][:, :12, :, :]
+            pred = pred_dict["prediction"][:, :16, :, :]
             pred = torch.argmax(pred, dim=1, keepdim=True)  # 2 1 500 1000
 
             no_obser_mask = observation <= 0
             pred[no_obser_mask] = -1
             # save pred as img
-            prediction_save_path = result_dir / "eval_segmentation/"
-            prediction_save_path.mkdir(parents=True, exist_ok=True)
-            # for batch_index in range(batch_size):
-            #     img_path = prediction_save_path / ('%08d.png' % int(pred_dict['frame_id'][0][batch_index]))
-            #     cls_id = pred[batch_index].cpu().numpy().astype(np.uint8)
+            #prediction_save_path = result_dir / "eval_segmentation/"
+            #prediction_save_path.mkdir(parents=True, exist_ok=True)
+            gt_path = result_dir / "dense_gt/"
+            gt_path.mkdir(parents=True, exist_ok=True)
+
+            #for batch_index in range(batch_size):
+            #     #img_path = prediction_save_path /pred_dict['frame_id'][0][batch_index] 
+            #     o_path = gt_path / pred_dict['frame_id'][0][batch_index]
+            #     cls_id = dense_gt[batch_index].cpu().numpy().astype(np.uint8)-1
             #     cls_id = np.transpose(cls_id, (1, 2, 0))
             #     rgb = id_to_rgb(cls_id)
+            #     print(rgb.shape)
             #     rgb = Image.fromarray(rgb)
-            #     rgb.save(str(img_path))
+            #     rgb.save(str(o_path))
+            #     #print(observation[batch_index].resize(h,w,1).size())
+            #     #obs = Image.fromarray(pred_dict[batch_index].resize(h,w).cpu().numpy().astype(np.uint8))
+            #     #obs.save(str(o_path))
 
             no_gt_mask = dense_gt.view(batch_size, 1, h, w) == 0
             pred[no_gt_mask] = -1
@@ -160,8 +189,8 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
             dense_gt[no_obser_mask] = 0
             dense_gt = dense_gt - 1  # from -1 to 11
 
-            prediction_save_path = result_dir / "eval_segmentation/"
-            prediction_save_path.mkdir(parents=True, exist_ok=True)
+            #prediction_save_path = result_dir / "eval_segmentation/"
+            #prediction_save_path.mkdir(parents=True, exist_ok=True)
             # for batch_index in range(batch_size):
                 # image_save_path = prediction_save_path / (str(i * batch_size + batch_index) + ".bin")
                 # label = pred[batch_index].flatten().cpu().numpy().astype(np.float32).tobytes()
@@ -181,8 +210,8 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
         class_list = []
         iou = []
         ret_dict = {}
-        class_name = ["vehicle", "person", "two-wheel", "rider", "road", "sidewalk", "otherground", "building",
-                      "object", "vegetation", "trunk", "terrain"]
+        class_name = ["barrier", "bicycle", "bus", "car", "c_v", "motorcycle", "pedestrian", "cone",
+                      "trailer", "truck", "drive", "other_flat", "sidewalk", "terrain", "manmade", "vegetation"]
 
         file = open(result_dir / ("eval_%s.txt" % epoch_id), 'a')
         for k in range(len(intersection)):
