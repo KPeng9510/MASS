@@ -23,7 +23,7 @@ def parse_config():
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config for training')
 
     parser.add_argument('--batch_size', type=int, default=4, required=False, help='batch size for training')
-    parser.add_argument('--output_dir', type=int, default=4, required=False, help='outputdir')
+    parser.add_argument('--output_dir', type=str, default='/home/kpeng/mass_test/output/', required=False, help='outputdir')
     parser.add_argument('--epochs', type=int, default=None, required=False, help='number of epochs to train for')
     parser.add_argument('--workers', type=int, default=6, help='number of workers for dataloader')
     parser.add_argument('--extra_tag', type=str, default='default', help='extra tag for this experiment')
@@ -35,7 +35,7 @@ def parse_config():
     parser.add_argument('--fix_random_seed', action='store_true', default=False, help='')
     parser.add_argument('--ckpt_save_interval', type=int, default=1, help='number of training epochs')
     parser.add_argument('--local_rank', type=int, default=0, help='local rank for distributed training')
-    parser.add_argument('--max_ckpt_save_num', type=int, default=40, help='max number of saved checkpoint')
+    parser.add_argument('--max_ckpt_save_num', type=int, default=30, help='max number of saved checkpoint')
     parser.add_argument('--merge_all_iters_to_one_epoch', action='store_true', default=False, help='')
     parser.add_argument('--set', dest='set_cfgs', default=None, nargs=argparse.REMAINDER,
                         help='set extra config keys if needed')
@@ -80,7 +80,7 @@ def main():
     #cfg.ROOT_DIR=Path('/home/kpeng/occupancy/model/')
     #output_dir = cfg.ROOT_DIR/ 'pillarseg_MASS_B2_noise_gaussian' / cfg.EXP_GROUP_PATH / cfg.TAG / args.extra_tag
     #ckpt_dir = output_dir / 'ckpt'
-    output_dir =  args.output_dir
+    output_dir =  Path(args.output_dir)
     ckpt_dir = output_dir / 'ckpt'
     output_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)

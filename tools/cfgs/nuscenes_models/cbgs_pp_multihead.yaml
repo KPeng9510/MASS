@@ -40,17 +40,22 @@ DATA_CONFIG:
 
 MODEL:
     NAME: PointPillar
-
+    
     VFE:
         NAME: PillarVFE
         WITH_DISTANCE: False
         USE_ABSLOTE_XYZ: True
         USE_NORM: True
+        NUM_POINT_FEATURES: 4
+        INTERMEDIATE_LSTM_DIM: 4
+        MAX_POINT_NUMPER_PER_PILLAR: 100
         NUM_FILTERS: [64]
 
     MAP_TO_BEV:
         NAME: PointPillarScatter
         NUM_BEV_FEATURES: 64
+    UNET_INPUT_DIMENSION: 128
+    CLASS_NUM: 16
 
 
 OPTIMIZATION:
