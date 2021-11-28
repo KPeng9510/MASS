@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .conv_module import ConvModule
-#from mmdet.core import mask_cross_entropy, mask_target
+#from mmdet.core import mask_crosms_entropy, mask_target
 def mask_cross_entropy(pred, target, label):
     num_rois = pred.size()[0]
     inds = torch.arange(0, num_rois, dtype=torch.long, device=pred.device)

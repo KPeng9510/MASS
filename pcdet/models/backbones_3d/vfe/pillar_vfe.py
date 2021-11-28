@@ -142,7 +142,7 @@ class pointsmean_attention(nn.Module):
 class PillarVFE(VFETemplate):
     def __init__(self, model_cfg, num_point_features, voxel_size, point_cloud_range):
         super().__init__(model_cfg=model_cfg)
-        num_point_features=4
+        num_point_features=self.model_cfg.NUM_POINT_FEATURES
         self.use_norm = self.model_cfg.USE_NORM
         self.with_distance = self.model_cfg.WITH_DISTANCE
         self.use_absolute_xyz = self.model_cfg.USE_ABSLOTE_XYZ
@@ -164,8 +164,8 @@ class PillarVFE(VFETemplate):
         self.pfn_layers = nn.ModuleList(pfn_layers)
         self.relu = nn.ReLU()
         self.lstm_attention = lstm_attention(num_point_features, num_point_features)
-        self.graph_attention=Graph_attention(num_point_features, 4)
-        self.pointsmean_attention = pointsmean_attention(num_point_features, 100)
+        self.graph_attention=Graph_attention(num_point_features, self.model_cfg.INTERMEDIATE_LSTM_DIM)
+        self.pointsmean_attention = pointsmean_attention(num_point_features, self.model_cfg.MAX_POINT_NUMPER_PER_PILLAR)
         self.FC1=nn.Sequential(
         nn.Linear(2*num_point_features, num_point_features),
         nn.ReLU(inplace=True),

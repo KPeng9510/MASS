@@ -28,7 +28,7 @@ class DatasetTemplate(torch_data.Dataset):
     def __init__(self, dataset_cfg=None, class_names=None, training=True, root_path=None, logger=None):
         super().__init__()
         self.dataset_cfg = dataset_cfg
-        self.image_size = self.dataset_cfg.image_size
+        self.image_size = self.dataset_cfg.IMAGE_SIZE
         self.training = training
         self.class_names = class_names
         self.logger = logger
@@ -54,7 +54,7 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = Path(self.dataset_cfg.dataset_root) #Path("/export/md0/dataset/MASS/")
+        self.root = Path(self.dataset_cfg.DATASET_ROOT) #Path("/export/md0/dataset/MASS/")
         self.gt_dense_bin_root = self.root /'bin_dense_gt' #'kitti_odo/training/'
         self.gt_dense_img_root = self.root /'img_dense_gt' #'nu_lidar_seg/label_image_dense_re/samples/'
         self.gt_obser_img_root = self.root /'img_observability_data' #'visi_nusc_gaussian_noise/'
@@ -63,11 +63,11 @@ class DatasetTemplate(torch_data.Dataset):
             self.split = "train"
             #sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
             #file_name = "/home/kpeng/pc14/sample_test.pkl"
-            file_name = self.dataset_cfg.nuscenes_train_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            file_name = self.dataset_cfg.nuscenes_train_info_path+"nuscenes_infos_1sweeps_train.pkl" #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         else:
             self.split = "test"
             #sequence = ["08"]
-            file_name = self.dataset_cfg.nuscenes_test_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            file_name = self.dataset_cfg.nuscenes_train_info_path+"nuscenes_infos_1sweeps_test.pkl" #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
 
         self.files_seq = []
         # comment it out when generate sample file
