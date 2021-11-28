@@ -98,7 +98,6 @@ class NuScenesDataset(DatasetTemplate):
             num_points = points_sweep.shape[1]
             points_sweep[:3, :] = sweep_info['transform_matrix'].dot(
                 np.vstack((points_sweep[:3, :], np.ones(num_points))))[:3, :]
-
         cur_times = sweep_info['time_lag'] * np.ones((1, points_sweep.shape[1]))
         return points_sweep.T, cur_times.T
     """
@@ -148,7 +147,6 @@ class NuScenesDataset(DatasetTemplate):
         #print(dense_path)
         #sys.exit()
         dense_point = np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([-1,6])[:,:6]
-
         #points = np.concatenate((points[:,:4],np.expand_dims(points[:,5],axis=-1)),axis=-1)
         #np.set_printoptions(threshold=np.inf)
         #print((points[:,5]!=0) & (points[:,5]!=11))
@@ -198,7 +196,6 @@ class NuScenesDataset(DatasetTemplate):
     def __getitem__(self, index):
         if self._merge_all_iters_to_one_epoch:
             index = index % len(self.infos)
-
         info = copy.deepcopy(self.infos[index])
         points,points_sp, origins, indices, dense_point = self.get_lidar_with_sweeps(index, max_sweeps=self.dataset_cfg.MAX_SWEEPS)
 
@@ -461,6 +458,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config of dataset')
+    parser.add_argument('--save_path', type=str, default=None, help='specify the save path for nuscenes info')
+    parser.add_argument('--data_path', type=str, default=None, help='specify the original path for nuscenes dataset')
     parser.add_argument('--func', type=str, default='create_nuscenes_infos', help='')
     parser.add_argument('--version', type=str, default='v1.0-trainval', help='')
     args = parser.parse_args()
@@ -472,14 +471,8 @@ if __name__ == '__main__':
         
         create_nuscenes_info(
             version=dataset_cfg.VERSION,
-            data_path='/cvhci/data/nuScenes/data/',
-            save_path='/home/kpeng/occupancy/data_seg/',
+            data_path=args.data_path,
+            save_path=args.save_path,
             max_sweeps=dataset_cfg.MAX_SWEEPS,
         )
-        """
-        nuscenes_dataset = NuScenesDataset(
-            dataset_cfg=dataset_cfg, class_names=None,
-            root_path=Path('/mrtstorage/users/kpeng/openpcdet/s/'),
-            logger=common_utils.create_logger(), training=True
-        )"""
-        """nuscenes_dataset.create_groundtruth_database(max_sweeps=dataset_cfg.MAX_SWEEPS)"""
+       

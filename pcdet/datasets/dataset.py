@@ -28,6 +28,7 @@ class DatasetTemplate(torch_data.Dataset):
     def __init__(self, dataset_cfg=None, class_names=None, training=True, root_path=None, logger=None):
         super().__init__()
         self.dataset_cfg = dataset_cfg
+        self.image_size = self.dataset_cfg.image_size
         self.training = training
         self.class_names = class_names
         self.logger = logger
@@ -53,20 +54,20 @@ class DatasetTemplate(torch_data.Dataset):
         self.voxel_size = self.data_processor.voxel_size
         self.total_epochs = 0
         self._merge_all_iters_to_one_epoch = False
-        self.root = Path("/export/md0/dataset/MASS/")
-        self.gt_dense_bin_root = self.root / 'kitti_odo/training/'
-        self.gt_dense_img_root = self.root / 'nu_lidar_seg/label_image_dense_re/samples/'
-        self.gt_obser_img_root = self.root / 'visi_nusc_gaussian_noise/'
-        self.gt_sparse_img_root= self.root /'sparse_label'
+        self.root = Path(self.dataset_cfg.dataset_root) #Path("/export/md0/dataset/MASS/")
+        self.gt_dense_bin_root = self.root /'bin_dense_gt' #'kitti_odo/training/'
+        self.gt_dense_img_root = self.root /'img_dense_gt' #'nu_lidar_seg/label_image_dense_re/samples/'
+        self.gt_obser_img_root = self.root /'img_observability_data' #'visi_nusc_gaussian_noise/'
+        self.gt_sparse_img_root= self.root /'img_sparse_gt' #'sparse_label'
         if training == True:
             self.split = "train"
             #sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
             #file_name = "/home/kpeng/pc14/sample_test.pkl"
-            file_name = "/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            file_name = self.dataset_cfg.nuscenes_train_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         else:
             self.split = "test"
             #sequence = ["08"]
-            file_name = "/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            file_name = self.dataset_cfg.nuscenes_test_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
 
         self.files_seq = []
         # comment it out when generate sample file
@@ -87,9 +88,9 @@ class DatasetTemplate(torch_data.Dataset):
         self.logger.info('Loading NuScenes dataset')
         nuscenes_infos = []
         if mode == 'train':
-            info_path="/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            info_path= self.dataset_cfg.nuscenes_train_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         else:
-            info_path = "/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            info_path = self.dataset_cfg.nuscenes_test_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         
         with open(info_path, 'rb') as f:
              infos = pickle.load(f)
@@ -139,29 +140,29 @@ class DatasetTemplate(torch_data.Dataset):
     def get_dense_gt_bin(self, seq, index):
         f_file = self.gt_dense_bin_root / index
         assert f_file.exists()
-        return np.fromfile(str(f_file), dtype=np.float32, count=-1).reshape(512, 512, 1)
+        return np.fromfile(str(f_file), dtype=np.float32, count=-1).reshape(self.image_size, self.image_size, 1)
 
     def get_dense_gt_img(self, seq, index):
         f_file = str(self.gt_dense_img_root /'LIDAR_TOP'/ index)+".png"
         #print(f_file)
         #assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(512, 512, 1)
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(self.image_size, self.image_size, 1)
 
     def get_grid_dense_gt_img(self, seq, index):
         f_file = self.gt_obser_img_root / seq / ('%015d.png' % int(index))
         assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(self.image_size, self.image_size, 1)
 
     def get_sparse_gt_img(self, seq, index):
         f_file = self.gt_sparse_img_root / seq / ('%06d.png' % int(index))
         #print(f_file)
         assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(500, 1000, 1)
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(self.image_size, self.image_size, 1)
 
     def get_obser_img(self, seq, index):
         f_file = str(self.gt_obser_img_root /index)+ '.png'
         #assert f_file.exists()
-        return np.array(io.imread(f_file), dtype=np.float32).reshape(512, 512, 1)
+        return np.array(io.imread(f_file), dtype=np.float32).reshape(self.image_size, self.image_size, 1)
 
     def __len__(self):
         return len(self.files_seq)
@@ -185,15 +186,18 @@ class DatasetTemplate(torch_data.Dataset):
         #    print(str(point_path))
         # print(point_path)
         #point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
-        pt = '/cvhci/data/nuScenes/data/'+point_path
+        pt = self.dataset_cfg.lidar_point_root + point_path #'/cvhci/data/nuScenes/data/'+point_path
         points = np.fromfile(str(pt), dtype=np.float32, count=-1).reshape([-1, 5])[:,:4]
         number = points.shape[0]
-        noise_x = np.random.randn(int(number/10))*102.4-51.2
-        noise_y = np.random.randn(int(number/10))*102.4-51.2
-        noise_z = np.random.randn(int(number/10))*8-5
-        noise = np.stack([noise_x, noise_y, noise_z, np.ones(int(number/10))], axis=-1)
+        """
+        the following commented codes is for noise disturbance
+        """
+        #noise_x = np.random.randn(int(number/10))*102.4-51.2
+        #noise_y = np.random.randn(int(number/10))*102.4-51.2
+        #noise_z = np.random.randn(int(number/10))*8-5
+        #noise = np.stack([noise_x, noise_y, noise_z, np.ones(int(number/10))], axis=-1)
 
-        points = np.concatenate([points,noise],axis=0)
+        #points = np.concatenate([points,noise],axis=0)
 
 
         mask = common_utils.mask_points_by_range(points, self.point_cloud_range)
@@ -230,7 +234,7 @@ class DatasetTemplate(torch_data.Dataset):
 
 
         # load observations
-        obser = self.get_obser_img(seq, pat)[:512, :512, :]
+        obser = self.get_obser_img(seq, pat)[:self.image_size, :self.image_size, :]
         # print(obser.shape)
         data_dict['observations'] = obser
 

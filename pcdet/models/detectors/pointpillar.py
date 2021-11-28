@@ -166,7 +166,7 @@ class PointPillar(Detector3DTemplate):
         """
            code for geomertic consistency
         """
-        if self.training:
+        if 1:
             # targets_crr = targets_crr.contiguous().view(batch, c, h, w)
             nozero_mask = targets_crr != 0
             targets_crr = torch.clamp(targets_crr[nozero_mask], 1, 16)
@@ -196,9 +196,10 @@ class PointPillar(Detector3DTemplate):
             ret_dict = {
                 'loss': loss_seg
             }
+            batch_dict['loss'] =loss_seg
             disp_dict = {}
             tb_dict = {}
-            return ret_dict, tb_dict, disp_dict
+            return ret_dict, tb_dict, batch_dict
         else:
             return batch_dict
             # pred_dicts, recall_dicts = self.post_processing(batch_dict)

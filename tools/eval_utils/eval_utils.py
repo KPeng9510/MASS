@@ -142,13 +142,16 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
     with tqdm.tqdm(total=n_val, desc='Val', unit='batch', leave=False) as pbar:
         intersection = torch.zeros(16)
         union = torch.zeros(16)
+        loss_sum = 0
         for i, batch_dict in enumerate(dataloader):
 
             load_data_to_gpu(batch_dict)
 
             with torch.no_grad():
-                pred_dict = model(batch_dict)
+                pred_dict = model(batch_dict)[-1]
             torch.set_printoptions(profile="full")
+            #print(pred_dict)
+            loss = pred_dict["loss"]
             batch_size, c, h, w = pred_dict["prediction"].size()
             dense_gt = pred_dict["labels_seg"]  # 0 to 12
             observation = pred_dict["observations"]
@@ -204,9 +207,9 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
             # pred = pred.permute(0,2,3,1)
             intersection, union = get_iou(pred, dense_gt, i + 1, intersection, union, n_val * batch_size, logger,
                                           result_dir, timestamp)
-
+            loss_sum += loss
             pbar.update()
-
+        loss_sum = loss_sum/len(dataloader)
         class_list = []
         iou = []
         ret_dict = {}
@@ -229,6 +232,7 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
             file.write('iou_%s: %f' % (class_index, iou[j]) + '\n')
             ret_dict['iou_%s' % class_index] = iou[j]
         logger.info('miou: %f' % (miou))
+        logger.info('loss: %f' % (loss_sum))
         file.write('miou: %f' % (miou) + '\n')
         ret_dict['miou']= miou
         file.write("****************************************************\n")

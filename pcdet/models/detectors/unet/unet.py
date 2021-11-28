@@ -44,8 +44,8 @@ class SimplifiedUNet(nn.Module):
         self.bilinear = bilinear
 
         # self.inc = DoubleConv(n_channels, 64)
-        n_channels=64
-        self.down1 = Down(64, 128)
+        #n_channels=64
+        self.down1 = Down(n_channels, 128)
         self.down2 = Down(128, 256)
         self.down3 = Down(256, 512)
         factor = 2 if bilinear else 1
