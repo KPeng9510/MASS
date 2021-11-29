@@ -18,3 +18,4 @@ change the source file path and save file path in the label_generator function. 
 is the aggregated point cloud path)
 uncomment #label_generator() and comment colorized_image_generator() to generate label leveraged for training and testing without colorization
 python gt_img.py
+(voxellization need to be compiled before execution)
