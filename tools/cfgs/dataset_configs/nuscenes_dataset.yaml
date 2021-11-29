@@ -1,11 +1,10 @@
 DATASET: 'DatasetTemplate'
 DATA_PATH: '/cvhci/data/nuScenes/data/sampels/LIDAR_TOP/'
-LIDAR_POINT_ROOT: '/cvhci/data/nuScenes/data/'
-DATASET_ROOT: '/export/md0/datasets/mass/develop'
-IMAGE_SIZE: 512
-NUSCENES_TRAIN_INFO_PATH: '/home/kpeng/occupancy/data_seg/v1.0-trainval/y
 
-'
+#LIDAR_POINT_ROOT: '/cvhci/data/nuScenes/data/'
+#DATASET_ROOT: '/export/md0/datasets/mass/develop'
+#IMAGE_SIZE: 512
+#NUSCENES_TRAIN_INFO_PATH: '/home/kpeng/occupancy/data_seg/v1.0-trainval/'
 VERSION: 'v1.0-trainval'
 MAX_SWEEPS: 1
 PRED_VELOCITY: True

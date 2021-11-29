@@ -63,11 +63,11 @@ class DatasetTemplate(torch_data.Dataset):
             self.split = "train"
             #sequence = ["00", "01", "02", "03", "04", "05", "06", "07", "09", "10"]
             #file_name = "/home/kpeng/pc14/sample_test.pkl"
-            file_name = self.dataset_cfg.nuscenes_train_info_path+"nuscenes_infos_1sweeps_train.pkl" #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            file_name = self.dataset_cfg.NUSCENES_TRAIN_INFO_PATH+"nuscenes_infos_1sweeps_train.pkl" #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         else:
             self.split = "test"
             #sequence = ["08"]
-            file_name = self.dataset_cfg.nuscenes_train_info_path+"nuscenes_infos_1sweeps_test.pkl" #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            file_name = self.dataset_cfg.NUSCENES_TRAIN_INFO_PATH+"nuscenes_infos_1sweeps_test.pkl" #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
 
         self.files_seq = []
         # comment it out when generate sample file
@@ -88,9 +88,9 @@ class DatasetTemplate(torch_data.Dataset):
         self.logger.info('Loading NuScenes dataset')
         nuscenes_infos = []
         if mode == 'train':
-            info_path= self.dataset_cfg.nuscenes_train_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            info_path= self.dataset_cfg.NUSCENES_TRAIN_INFO_PATH+'nuscenes_infos_1sweeps_train.pkl' #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         else:
-            info_path = self.dataset_cfg.nuscenes_test_info_path #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
+            info_path =self.dataset_cfg.NUSCENES_TRAIN_INFO_PATH+'nuscenes_infos_1sweeps_val.pkl' #"/home/kpeng/occupancy/data_seg/v1.0-trainval/nuscenes_infos_1sweeps_train.pkl"
         
         with open(info_path, 'rb') as f:
              infos = pickle.load(f)
@@ -186,7 +186,7 @@ class DatasetTemplate(torch_data.Dataset):
         #    print(str(point_path))
         # print(point_path)
         #point_path = "/home/kpeng/pc14/kitti_odo/training/"+point_path.split('/')[-2]+"/velodyne/"+point_path.split('/')[-1]
-        pt = self.dataset_cfg.lidar_point_root + point_path #'/cvhci/data/nuScenes/data/'+point_path
+        pt = self.dataset_cfg.LIDAR_POINT_ROOT + point_path #'/cvhci/data/nuScenes/data/'+point_path
         points = np.fromfile(str(pt), dtype=np.float32, count=-1).reshape([-1, 5])[:,:4]
         number = points.shape[0]
         """

@@ -4,6 +4,12 @@ CLASS_NAMES: ['car','truck', 'construction_vehicle', 'bus', 'trailer',
 DATA_CONFIG:
     _BASE_CONFIG_: cfgs/dataset_configs/nuscenes_dataset.yaml
 
+    DATA_PATH: /cvhci/data/nuscenes/samples/LIDAR_TOP/
+    LIDAR_POINT_ROOT: /cvhci/data/nuscenes/
+    DATASET_ROOT: /export/md0/datasets/mass/develop
+    IMAGE_SIZE: 512
+    NUSCENES_TRAIN_INFO_PATH: /home/kpeng/occupancy/data_seg/v1.0-trainval/
+
     POINT_CLOUD_RANGE: [-51.2, -51.2, -5, 51.2, 51.2, 3]
     DATA_PROCESSOR:
         -   NAME: mask_points_and_boxes_outside_range

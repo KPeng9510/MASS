@@ -130,7 +130,7 @@ class PointPillar(Detector3DTemplate):
         self.module_list = self.build_networks()
         self.unet_input_dimension = self.model_cfg.UNET_INPUT_DIMENSION
         self.class_num = self.model_cfg.CLASS_NUM
-        self.segmentation_head = SimplifiedUNet(self.segmentation_head, self.class_num)
+        self.segmentation_head = SimplifiedUNet(self.unet_input_dimension, self.class_num)
         self.focal_loss = FocalLoss()
 
     def forward(self, batch_dict):
