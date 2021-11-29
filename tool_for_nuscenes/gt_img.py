@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 #from .processor.point_feature_encoder import PointFeatureEncoder
 import sys
 #from mapping import mapping
-#from voxelize.voxelize import dense
+from voxelize.voxelize import dense
 color_map_1={
   "0" : [255, 255, 255],
   "1": [245, 150, 100],
@@ -67,9 +67,9 @@ def recursive_glob(rootdir=".", suffix=""):
 
 def colorized_image_generator():
     #file_name = "/home/kpeng/pc14/sample_test.pkl"
-    save_path = "/home/kpeng/pc14/nuscenes/colorized_gt/"
+    save_path = "/home/kpeng/occupancy/"
     #open_file = open(file_name, "rb")
-    file_path = "/home/kpeng/pc14/nuscenes/label_image_dense/LIDAR_TOP/"
+    file_path = "/home/kpeng/occupancy/"
     files_seq = recursive_glob(rootdir=file_path, suffix=".png")
     #files_seq = pickle.load(open_file)
     #open_file.close()
@@ -78,7 +78,8 @@ def colorized_image_generator():
     #locate = "/home/kpeng/pc14/kitti_odo/training/08/0000168.bin"
     #index = files_seq.index(locate)
     for point_path in files_seq:
-        #dense_path = '/home/kpeng/pc14/nuscenes/label_image_dense/LIDAR_TOP/n015-2018-09-25-13-17-43+0800__LIDAR_TOP__1537852966648600.png'
+        point_path='/home/kpeng/occupancy//n015-2018-07-18-11-07-57+0800__LIDAR_TOP__1531883530449377.png'
+        #dense_path = '/cvhci/temp/kpeng/aggregated_ego/samples/LIDAR_TOP/n015-2018-07-18-11-07-57+0800__LIDAR_TOP__1531883530449377.pcd.bin'
         pointcloud = np.array(Image.open(point_path)).reshape(512,512,1) #np.fromfile(str(dense_path), dtype=np.float32, count=-1).reshape([512,512,1])
         print(np.sum(pointcloud==4))
         picture = np.zeros([512,512,3])
@@ -91,15 +92,15 @@ def colorized_image_generator():
             picture[mask]=np.array(color_map[str(i)])/255
             #plt.figure()
             #picture=np.transpose()
-        img_path = save_path +str(point_path).split('/')[-2] +'/'+ str(point_path).split('/')[-1].split('.')[0]+'.png'
+        img_path = save_path +'/p'+ str(point_path).split('/')[-1].split('.')[0]+'.png'
         print(img_path)
         plt.imsave(img_path,picture)
-        #sys.exit()
+        sys.exit()
 def label_generator():
     #file_name = "/home/kpeng/pc14/sample_test.pkl"
-    save_path = "/mrtstorage/users/kpeng/nu_lidar_seg/label_image_dense/"
+    save_path = "/home/kpeng/occupancy/"
     #open_file = open(file_name, "rb")
-    file_path = "/mrtstorage/users/kpeng/nu_lidar_seg/concat_lidar_flat_divided/new_2/samples/LIDAR_TOP/"
+    file_path = "/cvhci/temp/kpeng/aggregated_ego/samples/LIDAR_TOP/"
     #files_seq = pickle.load(open_file)
     files_seq = recursive_glob(rootdir=file_path, suffix=".bin")
     #open_file.close()
@@ -131,7 +132,7 @@ def label_generator():
         #print(np.max(dense_gt))
         #sys.exit()
         #print(save_path+str(point_path).split('/')[-2] +'/'+ str(point_path).split('/')[-1])
-        save=save_path+str(point_path).split('/')[-2] +'/'+ str(point_path).split('/')[-1].split('.')[0]+'.png'
+        save=save_path+'/'+ str(point_path).split('/')[-1].split('.')[0]+'.png'
         #sys.exit()
         dense_gt=np.clip(dense_gt,0,255).astype(np.uint8)
         im = Image.fromarray(dense_gt)

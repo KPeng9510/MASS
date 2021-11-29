@@ -10,10 +10,18 @@ import logging
 from scipy.spatial.transform import Rotation as R
 from pyquaternion import Quaternion
 logging.basicConfig(level=logging.DEBUG)
-file_path = "/mrtstorage/users/kpeng/nu_lidar_seg/concat_lidar_flat_divided_new/" #path to the point cloud concatenated with semantic labels
-save_path = "/mrtstorage/users/kpeng/nu_lidar_seg/concat_lidar_flat_divided/new_2/" #save path for dense aggregated labeled point cloud (note that this step will take a large space)
+file_path = "/cvhci/temp/kpeng/concat_lidar_flat_divided_new/" #path to the point cloud concatenated with semantic labels
+save_path = "/cvhci/temp/kpeng/aggregated_ego/" #save path for dense aggregated labeled point cloud (note that this step will take a large space)
+
+if not os.path.exists(save_path):
+    os.mkdir(save_path)
+if not os.path.exists(save_path+'/samples'):
+    os.mkdir(save_path+'/samples')
+if not os.path.exists(save_path+'/samples/LIDAR_TOP'):
+    os.mkdir(save_path+'samples/'+'LIDAR_TOP')
+
 def seg_concat():
-    nusc = NuScenes(version='v1.0-trainval', dataroot='/path/to/nuscenes/v1.0-trainval/', verbose=True) #path to v1.0-trianval for the raw nuscenes dataset 
+    nusc = NuScenes(version='v1.0-trainval', dataroot='/cvhci/data/nuscenes/', verbose=True) #path to v1.0-trianval for the raw nuscenes dataset 
     scene_list = {}
     scene_token = {}
     scene_ego = {}
@@ -124,8 +132,9 @@ def pc_ego_list(scene_list_1,scene_token_1,scene_ego_1,nusc, count):
                 binfile.write(final_pc.flatten().tobytes())
                 binfile.close()
                 print(save_path+key_frame_sample)
-                sys.exit()
+                #sys.exit()
 
 if __name__ == "__main__":
     a,b,c,d,e =seg_concat()
+    pc_ego_list(a,b,c,d,e)
 

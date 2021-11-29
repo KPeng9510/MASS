@@ -4,8 +4,8 @@ import os
 import json
 import numpy as np
 import torch
-filepath="/path/to/lidarseg/v1.0-trainval" #path to semantic segmentation labels for nuscenes lidarseg dataset
-savepath="/home/kpeng/pc14/nu_lidar_seg/processed_anno_new/" # path to the saved processed labels
+filepath="/cvhci/data/nuscenes/lidarseg/v1.0-trainval" #path to semantic segmentation labels for nuscenes lidarseg dataset
+savepath="/cvhci/temp/kpeng/processed_anno_new/" # path to the saved processed labels
 """
 'car:5',    1
 'truck:5', 2
@@ -73,7 +73,7 @@ def eachFile(filepath):
         new_label[mask_vegetation] = 16
 
         binfile = open(save_file_path, 'wb+') 
-        binfile.write(content)
+        binfile.write(new_label.numpy().tobytes())
 
 
 if __name__ == "__main__":
