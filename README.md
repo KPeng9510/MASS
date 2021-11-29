@@ -33,6 +33,7 @@ semantic_kitti_pillarseg is for SemanticKitti dataset while using the same confi
 ## Installation
 
 Please refer to [INSTALL.md](docs/INSTALL.md) for the installation of `OpenPCDet`.
+please refer to https://github.com/pyg-team/pytorch_geometric for the installation of pytorch-geometric
 
 
 ## Getting Started
