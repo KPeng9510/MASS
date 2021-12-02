@@ -17,7 +17,7 @@ Nuscenes tools: The tools for generating dense top-view label through multi-scen
 
 ## Visibility Map Generation
 
-Code is in voxelize folder, please run cmake first to build it and use dense.cpp to generate the visibility map. Thanks to https://github.com/peiyunh/wysiwyg.git.
+Please refer to the folder tools_for_nusc/observability for the code, please run cmake first to build it and use dense.cpp to generate the visibility map. Thanks to https://github.com/peiyunh/wysiwyg.git.
 
 ## Branches
 
